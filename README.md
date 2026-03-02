@@ -62,9 +62,9 @@ See: `./ADR/`
 
 ### 2) Canonical Runtime Configuration (IO-III)
 
-- `IO-III/runtime/config/routing_table.yaml`
-- `IO-III/runtime/config/providers.yaml`
-- `IO-III/runtime/config/logging.yaml`
+- `architecture/runtime/config/routing_table.yaml`
+- `architecture/runtime/config/providers.yaml`
+- `architecture/runtime/config/logging.yaml`
 
 These files define the canonical runtime configuration used by the reference control-plane implementation.
 
@@ -72,7 +72,7 @@ These files define the canonical runtime configuration used by the reference con
 
 A small Python package that loads config, resolves routes, and enforces bounded audit behavior:
 
-- `io_iii/config.py` (default config dir resolves to `IO-III/runtime/config/`)
+- `io_iii/config.py` (default config dir resolves to `architecture/runtime/config/`)
 - `io_iii/routing.py` (deterministic route resolution)
 - `io_iii/providers/` (`null_provider.py`, `ollama_provider.py`)
 - `io_iii/cli.py` (CLI entry; `--audit` bounded by ADR-009)
@@ -80,8 +80,8 @@ A small Python package that loads config, resolves routes, and enforces bounded 
 
 ### 4) Invariant Suite + Validation
 
-- Invariant fixtures: `IO-III/tests/invariants/`
-- Validation script: `IO-III/runtime/scripts/validate_invariants.py`
+- Invariant fixtures: `architecture/runtime/tests/invariants/`
+- Validation script: `architecture/runtime/scripts/validate_invariants.py`
 
 ### 5) Regression Enforcement (Audit Bounds)
 
