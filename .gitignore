@@ -36,23 +36,23 @@ venv/
 # ==============================
 # IO-III runtime artifacts (local-only)
 # ==============================
-/IO-III/runtime/logs/
-/IO-III/runtime/state/
+/architecture/runtime/logs/
+/architecture/runtime/state/
 
 # ==============================
 # IO-III test results (generated, local-only)
 # ==============================
-/IO-III/tests/results/*
+/architecture/tests/results/*
 
 # Allow documentation inside otherwise-ignored directory
-!/IO-III/tests/results/
-!/IO-III/tests/results/README.md
+!/architecture/tests/results/
+!/architecture/tests/results/README.md
 
 # ==============================
 # IO-II test results (generated, local-only)
 # ==============================
-/IO-II/tests/results/*
+/history/io-ii/tests/results/*
 
 # Allow documentation inside otherwise-ignored directory
-!/IO-II/tests/results/
-!/IO-II/tests/results/README.md
+!/history/io-ii/tests/results/
+!/history/io-ii/tests/results/README.md

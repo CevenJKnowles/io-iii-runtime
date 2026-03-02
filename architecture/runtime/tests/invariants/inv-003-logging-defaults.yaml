@@ -6,35 +6,35 @@ title: "Logging Defaults (Metadata ON, Content OFF)"
 status: "active"
 source_of_truth:
   - "./ADR/ADR-003-telemetry-logging-and-retention-policy.md"
-  - "./IO-III/runtime/config/logging.yaml"
+  - "./architecture/runtime/config/logging.yaml"
 
 assertions:
   - name: "Local-only storage is enabled"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/logging.yaml"
+    file: "./architecture/runtime/config/logging.yaml"
     path: "storage.local_only"
     expected: true
 
   - name: "Metadata logging is enabled"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/logging.yaml"
+    file: "./architecture/runtime/config/logging.yaml"
     path: "logging.metadata.enabled"
     expected: true
 
   - name: "Content logging is disabled by default"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/logging.yaml"
+    file: "./architecture/runtime/config/logging.yaml"
     path: "logging.content.enabled"
     expected: false
 
   - name: "Retention days: metadata 30"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/logging.yaml"
+    file: "./architecture/runtime/config/logging.yaml"
     path: "logging.metadata.retention_days"
     expected: 30
 
   - name: "Retention days: content 7"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/logging.yaml"
+    file: "./architecture/runtime/config/logging.yaml"
     path: "logging.content.retention_days"
     expected: 7

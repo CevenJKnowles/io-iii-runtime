@@ -8,7 +8,7 @@ if [[ -z "${REPO_ROOT}" ]]; then
   exit 2
 fi
 
-CONFIG_DIR_DEFAULT="${REPO_ROOT}/IO-III/runtime/config"
+CONFIG_DIR_DEFAULT="${REPO_ROOT}/architecture/runtime/config"
 
 # Always run from repo root so Python can import the local package.
 cd "${REPO_ROOT}"
