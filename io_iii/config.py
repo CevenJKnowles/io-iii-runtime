@@ -46,14 +46,14 @@ def _repo_root() -> Optional[Path]:
 
 def default_config_dir() -> Path:
     """
-    Portable default config dir resolver.
+    Default config dir resolver.
 
-    Strategy:
-    - Resolve repo root relative to this file location.
-    - Return <repo_root>/IO-III/runtime/config
+    Returns:
+    - <this_runtime_dir>/config
+      i.e. architecture/io-iii/runtime/config
     """
-    repo_root = Path(__file__).resolve().parents[1]
-    return repo_root / "IO-III" / "runtime" / "config"
+    runtime_dir = Path(__file__).resolve().parent.parent  # .../runtime
+    return runtime_dir / "config"
 
 
 def _load_yaml(path: Path) -> Dict[str, Any]:
