@@ -6,18 +6,18 @@ title: "Routing Table Integrity"
 status: "active"
 source_of_truth:
   - "./ADR/ADR-002-model-routing-and-fallback-policy.md"
-  - "./IO-III/runtime/config/routing_table.yaml"
+  - "./architecture/runtime/config/routing_table.yaml"
 
 assertions:
   - name: "Routing selection is mode-driven"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/routing_table.yaml"
+    file: "./architecture/runtime/config/routing_table.yaml"
     path: "rules.selection_method"
     expected: "mode"
 
   - name: "All modes defined"
     type: "yaml_has_keys"
-    file: "./IO-III/runtime/config/routing_table.yaml"
+    file: "./architecture/runtime/config/routing_table.yaml"
     path: "modes"
     expected_keys:
       - "executor"
@@ -28,7 +28,7 @@ assertions:
 
   - name: "Each mode has primary and secondary"
     type: "yaml_each_has_keys"
-    file: "./IO-III/runtime/config/routing_table.yaml"
+    file: "./architecture/runtime/config/routing_table.yaml"
     path: "modes"
     each_item_required_keys:
       - "primary"
@@ -36,12 +36,12 @@ assertions:
 
   - name: "Challenger is not user-facing"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/routing_table.yaml"
+    file: "./architecture/runtime/config/routing_table.yaml"
     path: "rules.boundaries.challenger_user_facing"
     expected: false
 
   - name: "Single-voice guarantee is enabled"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/routing_table.yaml"
+    file: "./architecture/runtime/config/routing_table.yaml"
     path: "rules.boundaries.single_voice_output"
     expected: true

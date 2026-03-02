@@ -6,41 +6,41 @@ title: "Cloud Providers Disabled by Default"
 status: "active"
 source_of_truth:
   - "./ADR/ADR-004-cloud-provider-enablement-and-key-security.md"
-  - "./IO-III/runtime/config/providers.yaml"
+  - "./architecture/runtime/config/providers.yaml"
 
 assertions:
   - name: "Local runtime is enabled"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/providers.yaml"
+    file: "./architecture/runtime/config/providers.yaml"
     path: "providers.ollama.enabled"
     expected: true
 
   - name: "OpenAI is disabled"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/providers.yaml"
+    file: "./architecture/runtime/config/providers.yaml"
     path: "providers.openai.enabled"
     expected: false
 
   - name: "Anthropic is disabled"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/providers.yaml"
+    file: "./architecture/runtime/config/providers.yaml"
     path: "providers.anthropic.enabled"
     expected: false
 
   - name: "Google is disabled"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/providers.yaml"
+    file: "./architecture/runtime/config/providers.yaml"
     path: "providers.google.enabled"
     expected: false
 
   - name: "Implicit cloud fallback is forbidden"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/providers.yaml"
+    file: "./architecture/runtime/config/providers.yaml"
     path: "policies.allow_implicit_cloud_fallback"
     expected: false
 
   - name: "Internal-to-cloud requires explicit override"
     type: "yaml_equals"
-    file: "./IO-III/runtime/config/providers.yaml"
+    file: "./architecture/runtime/config/providers.yaml"
     path: "policies.internal_to_cloud_requires_override"
     expected: true
