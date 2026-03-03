@@ -1,0 +1,222 @@
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Mapping, Optional, Sequence
+
+from io_iii.core.session_state import SessionState
+
+
+ASSEMBLY_VERSION = "adr-010/v1"
+
+
+@dataclass(frozen=True)
+class AssembledContext:
+    """
+    Content-plane output of the Context Assembly Layer (ADR-010).
+
+    Logging policy:
+    - DO NOT log system_prompt, user_prompt, or messages.
+    - It is safe to log prompt_hash and assembly_metadata (non-content metrics only).
+    """
+    system_prompt: str
+    user_prompt: str
+    messages: List[Dict[str, str]]
+    prompt_hash: str
+    assembly_version: str = ASSEMBLY_VERSION
+    assembly_metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+def assemble_context(
+    *,
+    session_state: SessionState,
+    user_prompt: str,
+    persona_contract: str,
+    route_metadata: Mapping[str, Any] | None = None,
+) -> AssembledContext:
+    """
+    Deterministically assemble the provider-neutral prompt/messages.
+
+    Inputs:
+    - session_state: control-plane only (must not contain prompt/output content)
+    - user_prompt: explicit user content (content-plane)
+    - persona_contract: persona contract text (content-plane)
+    - route_metadata: non-content routing/provider metadata (control-plane-ish)
+
+    Output:
+    - AssembledContext (content-plane)
+    """
+    if route_metadata is None:
+        route_metadata = {}
+
+    system_prompt = _build_system_prompt(
+        session_state=session_state,
+        persona_contract=persona_contract,
+        route_metadata=route_metadata,
+    )
+
+    messages = _build_messages(system_prompt=system_prompt, user_prompt=user_prompt)
+
+    prompt_hash = _compute_prompt_hash(messages=messages)
+
+    assembly_metadata = _build_assembly_metadata(
+        session_state=session_state,
+        route_metadata=route_metadata,
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        messages=messages,
+    )
+
+    return AssembledContext(
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        messages=messages,
+        prompt_hash=prompt_hash,
+        assembly_version=ASSEMBLY_VERSION,
+        assembly_metadata=assembly_metadata,
+    )
+
+
+# ----------------------------
+# Deterministic construction
+# ----------------------------
+
+def _build_system_prompt(
+    *,
+    session_state: SessionState,
+    persona_contract: str,
+    route_metadata: Mapping[str, Any],
+) -> str:
+    """
+    Canonical system prompt layout (stable ordering, no randomness).
+
+    Sections:
+    1) System header (IO-III governance posture)
+    2) Persona contract
+    3) Runtime boundaries summary (non-content)
+    4) Execution envelope (mode, audit toggle)
+    """
+    header = (
+        "You are IO-III.\n"
+        "Operate under governance-first constraints.\n"
+        "Follow deterministic, bounded execution.\n"
+        "Output must be a single unified final response.\n"
+    )
+
+    persona_section = (
+        "=== Persona Contract ===\n"
+        f"{persona_contract.strip()}\n"
+    )
+
+    boundaries_section = _format_boundaries_section(session_state=session_state, route_metadata=route_metadata)
+
+    envelope_section = (
+        "=== Execution Envelope ===\n"
+        f"mode: {session_state.mode}\n"
+        f"audit_enabled: {bool(session_state.audit.audit_enabled)}\n"
+        f"max_audit_passes: 1\n"
+        f"max_revision_passes: 1\n"
+    )
+
+    # Stable join with explicit separators
+    return "\n".join([header.strip(), persona_section.strip(), boundaries_section.strip(), envelope_section.strip()]).strip() + "\n"
+
+
+def _format_boundaries_section(*, session_state: SessionState, route_metadata: Mapping[str, Any]) -> str:
+    """
+    Non-content summary of relevant boundaries/policy.
+    Must remain deterministic and safe to include in system prompt.
+    """
+    provider = session_state.provider
+    route_id = session_state.route_id
+
+    # Only include safe, non-content keys from route_metadata
+    safe_keys = ("selected_provider", "selected_target", "fallback_used", "route_id")
+    safe_meta: Dict[str, Any] = {}
+    for k in safe_keys:
+        if k in route_metadata:
+            safe_meta[k] = route_metadata[k]
+
+    # Include routing boundaries if present (already non-content policy)
+    boundaries = {}
+    if session_state.route is not None:
+        boundaries = dict(session_state.route.boundaries or {})
+
+    # Canonical JSON for deterministic ordering
+    safe_meta_json = _canonical_json(safe_meta)
+    boundaries_json = _canonical_json(boundaries)
+
+    return (
+        "=== Runtime Boundaries ===\n"
+        f"provider: {provider}\n"
+        f"route_id: {route_id}\n"
+        f"route_metadata: {safe_meta_json}\n"
+        f"boundaries: {boundaries_json}\n"
+    )
+
+
+def _build_messages(*, system_prompt: str, user_prompt: str) -> List[Dict[str, str]]:
+    """
+    Provider-neutral message format.
+    Deterministic ordering.
+    """
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+
+
+def _compute_prompt_hash(*, messages: Sequence[Mapping[str, str]]) -> str:
+    """
+    Compute sha256 hash of canonical serialisation of messages.
+    Safe to log.
+    """
+    payload = _canonical_json(list(messages))
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return digest
+
+
+def _build_assembly_metadata(
+    *,
+    session_state: SessionState,
+    route_metadata: Mapping[str, Any],
+    system_prompt: str,
+    user_prompt: str,
+    messages: Sequence[Mapping[str, str]],
+) -> Dict[str, Any]:
+    """
+    Non-content metrics only.
+    """
+    # Char counts only (no content)
+    sys_len = len(system_prompt)
+    user_len = len(user_prompt)
+    msg_count = len(messages)
+
+    return {
+        "assembly_version": ASSEMBLY_VERSION,
+        "mode": session_state.mode,
+        "provider": session_state.provider,
+        "model": session_state.model,
+        "route_id": session_state.route_id,
+        "audit_enabled": bool(session_state.audit.audit_enabled),
+        "system_prompt_chars": sys_len,
+        "user_prompt_chars": user_len,
+        "message_count": msg_count,
+        # Include only safe keys; never include full route_metadata blob
+        "route_metadata_safe": {
+            k: route_metadata.get(k)
+            for k in ("selected_provider", "selected_target", "fallback_used", "route_id")
+            if k in route_metadata
+        },
+    }
+
+
+def _canonical_json(obj: Any) -> str:
+    """
+    Stable JSON serialisation:
+    - sorted keys
+    - compact separators
+    - no non-deterministic whitespace
+    """
+    return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
