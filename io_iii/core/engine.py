@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 
 from io_iii.core.context_assembly import assemble_context
+from io_iii.core.execution_context import ExecutionContext
 from io_iii.core.session_state import (
     AuditGateState,
     SessionState,
@@ -150,6 +151,17 @@ def run(
     # Null route
     if session_state.provider != "ollama":
         provider = NullProvider()
+
+        # Engine-local execution context (no content; no assembly for null route)
+        _exec_ctx = ExecutionContext(
+            cfg=cfg,
+            session_state=session_state,
+            provider=provider,
+            route=session_state.route,
+            prompt_hash=None,
+            assembled_context=None,
+        )
+
         result_obj = provider.run(mode=session_state.mode, route_id=session_state.route_id, meta={})
         message = getattr(result_obj, "message", "")
         meta = getattr(result_obj, "meta", {})
@@ -184,6 +196,16 @@ def run(
             "fallback_used": session_state.route.fallback_used,
             "route_id": session_state.route_id,
         },
+    )
+
+    # Engine-local execution context (content-safe: stores hash, not prompt text)
+    _exec_ctx = ExecutionContext(
+        cfg=cfg,
+        session_state=session_state,
+        provider=provider,
+        route=session_state.route,
+        prompt_hash=assembled.prompt_hash,
+        assembled_context=assembled,
     )
 
     # Keep historical suffix while ADR-010 provides the canonical system prompt.
