@@ -64,7 +64,9 @@ Examples:
 
 ---
 
-## Runtime Layer
+## Runtime
+
+- DOC-RUN-004 — Capability Result Metadata Contract Layer
 
 Documents runtime behaviour and configuration.
 ```
@@ -94,7 +96,9 @@ Examples:
 
 ---
 
-## Governance Layer
+## Governance
+
+- DOC-GOV-002 — Capability Governance Policy Layer
 
 Defines the governance rules and architectural change process.
 ```
