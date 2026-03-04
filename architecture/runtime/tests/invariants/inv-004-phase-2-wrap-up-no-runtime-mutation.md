@@ -1,0 +1,30 @@
+```yaml
+schema: "io-iii-invariant-spec"
+version: "v1.0"
+
+id: "INV-004"
+title: "Phase 2 Wrap-up Boundary (No Runtime Mutation)"
+status: "active"
+source_of_truth:
+  - "./docs/overview/DOC-OVW-003-phase-3-capability-layer-roadmap.md"
+  - "./docs/runtime/DOC-RUN-002-sessionstate-v0-contract.md"
+
+assertions:
+  - name: "Runtime package must not be modified during Phase 2 wrap-up"
+    type: "git_forbid_paths"
+    scope: "both"
+    forbidden_paths:
+      - "io_iii/"
+
+  - name: "Runtime config must not be modified during Phase 2 wrap-up"
+    type: "git_forbid_paths"
+    scope: "both"
+    forbidden_paths:
+      - "architecture/runtime/config/"
+
+  - name: "Archive/history layer must not be modified during Phase 2 wrap-up"
+    type: "git_forbid_paths"
+    scope: "both"
+    forbidden_paths:
+      - "history/"
+```
