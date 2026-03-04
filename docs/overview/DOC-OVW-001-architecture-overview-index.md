@@ -54,13 +54,10 @@ DOC-OVW-003 | Phase 3 capability layer roadmap |
 ## Architecture Layer
 
 Defines the structural design and architectural guarantees.
-
 ```
 docs/architecture/
 ```
-
 Examples:
-
 - execution model
 - control-plane structure
 - routing architecture
@@ -69,14 +66,11 @@ Examples:
 
 ## Runtime Layer
 
-Documents runtime behavior and configuration.
-
+Documents runtime behaviour and configuration.
 ```
 docs/runtime/
 ```
-
 Examples:
-
 - routing table design
 - provider configuration
 - logging policy
@@ -86,13 +80,10 @@ Examples:
 ## Implementation Layer
 
 Documents the reference implementation used by the architecture.
-
 ```
 docs/implementation/
 ```
-
 Examples:
-
 - engine design
 - execution pipeline
 - dependency injection seams
@@ -102,13 +93,10 @@ Examples:
 ## Governance Layer
 
 Defines the governance rules and architectural change process.
-
 ```
 docs/governance/
 ```
-
 Examples:
-
 - ADR process
 - architecture review procedures
 - invariant enforcement rules
@@ -118,13 +106,10 @@ Examples:
 # ADR System
 
 Architectural decisions are documented in:
-
 ```
 ADR/
 ```
-
 The ADR system defines the **decision record for any structural change** affecting:
-
 - control-plane behavior
 - routing rules
 - provider selection
@@ -138,7 +123,6 @@ No structural architecture change should occur without a corresponding ADR.
 # Architectural Principles
 
 IO-III follows several core architectural principles:
-
 - deterministic routing
 - bounded execution
 - invariant-protected architecture
@@ -152,7 +136,6 @@ These principles ensure the system remains **predictable, inspectable, and stabl
 # Documentation Navigation Strategy
 
 The documentation is intentionally structured to support:
-
 - architecture review
 - onboarding for engineers
 - external technical evaluation
@@ -167,7 +150,6 @@ Working notes and draft materials are stored separately and must not be mixed wi
 # Future Documentation Expansion
 
 Future phases of IO-III may introduce additional documentation sections including:
-
 - capability layer specifications
 - verification architecture
 - memory persistence contracts

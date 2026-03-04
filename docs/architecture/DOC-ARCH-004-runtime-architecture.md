@@ -59,7 +59,33 @@ Each layer has a **single responsibility**, preventing implicit behavior or unco
 
 # Runtime Architecture Diagram
 
-[architecture-diagram](../media/architecture-diagram.png)
+```mermaid
+flowchart TB
+
+subgraph Interface
+CLI["CLI Interface"]
+end
+
+subgraph ControlPlane["Control Plane"]
+ENGINE["Execution Engine"]
+CTX["ExecutionContext"]
+ASSEMBLY["Context Assembly (ADR‑010)"]
+end
+
+subgraph Runtime
+PROVIDER["Provider Adapter"]
+end
+
+subgraph Governance
+CHALLENGER["Challenger Layer (ADR‑008)"]
+end
+
+CLI --> ENGINE
+ENGINE --> CTX
+CTX --> ASSEMBLY
+ASSEMBLY --> PROVIDER
+PROVIDER --> CHALLENGER
+```
 
 This diagram illustrates the **deterministic execution pipeline** used by the IO-III control plane.
 

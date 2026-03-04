@@ -1,115 +1,177 @@
-# IO-III Architecture
+# IO‑III Architecture
 
-This repository defines the **governance-first control-plane architecture** for **IO-III**, a **deterministic, bounded local LLM orchestration system** designed around **structural guarantees** rather than feature expansion.
+IO‑III is a **governance‑first LLM control‑plane architecture** designed for **deterministic, bounded execution of local language models**.
 
-The project prioritizes:
+Unlike feature‑driven AI frameworks, IO‑III focuses on **structural guarantees**:
 
 - deterministic routing
 - bounded execution
 - explicit audit gates
-- contract-level invariants
-- architecture-first governance
+- invariant‑protected runtime behaviour
+- architecture‑first governance
 
-The repository contains both:
+The repository contains:
 
 1. a formal architecture specification layer (ADRs, invariants, contracts, governance rules)
-2. a minimal reference implementation of the control plane (config loading, routing resolution, bounded execution, audit enforcement)
+2. a minimal reference implementation of the runtime control plane
 
-It does **not** attempt to implement a full autonomous agent or feature-complete runtime.
-
----
-
-## Design Intent
-
-IO-III is intentionally engineered under strict structural constraints:
-
-- Deterministic routing
-- Bounded execution
-- No recursion loops
-- No unbounded chains
-- Governance before feature expansion
-- Local-first architecture
-- Contract + invariant enforcement as stability mechanisms
-
-Structural integrity is prioritized over capability growth.
+The project intentionally prioritises **architectural clarity and deterministic system design** over rapid feature expansion.
 
 ---
 
-## Governance Model (ADR‑First)
+# Architecture Quick Start
 
-All structural changes must follow an **ADR-first process**.
+IO‑III implements a **deterministic local LLM control plane** designed around governance and bounded execution.
+
+Core runtime structure:
+
+CLI  
+↓  
+Execution Engine  
+↓  
+ExecutionContext  
+↓  
+Context Assembly (ADR‑010)  
+↓  
+Provider  
+↓  
+Challenger (optional)
+
+Key guarantees enforced by the architecture:
+
+- deterministic routing
+- bounded audit passes
+- bounded revision passes
+- invariant‑protected runtime behaviour
+- governance‑first system evolution
+
+Primary architecture documentation:
+
+docs/overview/ → system overview and roadmap  
+docs/architecture/ → architecture definitions  
+ADR/ → architectural decision records
+
+---
+
+# Runtime Architecture
+
+```mermaid
+flowchart TB
+
+subgraph Interface
+CLI["CLI Interface"]
+end
+
+subgraph ControlPlane["Control Plane"]
+ENGINE["Execution Engine"]
+CTX["ExecutionContext"]
+ASSEMBLY["Context Assembly (ADR‑010)"]
+end
+
+subgraph Runtime
+PROVIDER["Provider Adapter"]
+end
+
+subgraph Governance
+CHALLENGER["Challenger Layer (ADR‑008)"]
+end
+
+CLI --> ENGINE
+ENGINE --> CTX
+CTX --> ASSEMBLY
+ASSEMBLY --> PROVIDER
+PROVIDER --> CHALLENGER
+```
+
+The runtime implements a **deterministic execution pipeline** with explicit architectural boundaries between interface, control plane, runtime providers, and governance layers.
+
+---
+
+# Design Intent
+
+IO‑III is engineered under strict architectural constraints:
+- deterministic routing
+- bounded execution
+- no recursion loops
+- no unbounded chains
+- governance before feature expansion
+- local‑first architecture
+- contract + invariant enforcement as stability mechanisms
+
+Structural integrity is prioritised over capability growth.
+
+---
+
+# Governance Model (ADR‑First)
+
+All structural changes follow an **ADR‑first development model**.
 
 Any modification affecting:
 
-- control-plane design
+- control‑plane design
 - routing logic or fallback policy
-- provider/model selection
-- audit gates or execution bounds
-- persona binding or mode governance
-- memory or persistence contracts
-- cross-model behavior
+- provider or model selection
+- audit gate behaviour
+- persona binding or runtime governance
+- memory or persistence layers
+- cross‑model interaction
 
-requires a new ADR in:
+requires a new architecture decision record inside:
 
-ADR/
+`ADR/`
 
-before implementation or documentation updates occur.
+before implementation changes occur.
 
-This repository is the **source of truth for IO-III architecture and runtime boundaries**.
-
----
-
-## Repository Contents
-
-### ADR Set
-
-Architecture decisions are defined in:
-
-ADR/
-
-Current ADR coverage:
-
-| ADR | Topic |
-|-----|------|
-| ADR-001 | LLM runtime control plane selection |
-| ADR-002 | Deterministic routing and fallback policy |
-| ADR-003 | Telemetry logging and retention posture |
-| ADR-004 | Cloud provider enablement and key security |
-| ADR-005 | Evaluation and regression enforcement |
-| ADR-006 | Persona binding and mode governance |
-| ADR-007 | Memory persistence and drift control boundaries |
-| ADR-008 | Challenger enforcement layer |
-| ADR-009 | Audit gate contract and bounded execution |
-| ADR-010 | Context assembly layer |
+This repository therefore functions as the **source of truth for IO‑III architectural boundaries**.
 
 ---
 
-### Canonical Runtime Configuration
+# Documentation Structure
 
-Runtime configuration lives under:
+The documentation follows a structured classification system.
 
-architecture/runtime/config/
+DOC‑OVW → system overview documents  
+DOC‑ARCH → architecture definitions  
+DOC‑IMPL → implementation documentation  
+DOC‑RUN → runtime configuration documentation  
+DOC‑GOV → governance documentation  
+ADR → architectural decision records
 
-Key files:
-
-- routing_table.yaml
-- providers.yaml
-- logging.yaml
-
-These define the canonical runtime configuration used by the reference control-plane implementation.
+Primary entry points:
+docs/overview/DOC‑OVW‑001‑architecture‑overview‑index.md  
+docs/architecture/DOC‑ARCH‑001‑runtime‑architecture.md
 
 ---
 
-### Control‑Plane Reference Implementation
+# Repository Layout
 
-The repository includes a **minimal Python implementation** of the IO‑III control plane.
+ADR/ → architecture decision records
+
+docs/  
+  overview/ → high‑level system documentation  
+  architecture/ → architecture definitions  
+
+architecture/  
+  runtime/  
+    config/ → canonical runtime configuration  
+    tests/ → invariant fixtures  
+    scripts/ → invariant validator  
+
+io_iii/ → reference runtime implementation  
+  core/ → engine components  
+  providers/ → provider adapters  
+  routing.py → deterministic routing  
+  cli.py → CLI interface  
+
+---
+
+# Control‑Plane Reference Implementation
+
+The repository includes a **minimal Python implementation of the IO‑III control plane**.
 
 Core modules:
 
 io_iii/
-
-Important components:
-
 | Module | Responsibility |
 |------|----------------|
 | config.py | runtime config loading |
@@ -126,46 +188,41 @@ Execution path:
 
 CLI → Engine.run() → ExecutionContext → Context Assembly → Provider → Challenger (optional)
 
-This layering enforces a **single deterministic execution path**.
+This layering guarantees **single‑path deterministic execution**.
 
 ---
 
-### Invariant Suite
+# Invariant Suite
 
-Invariant fixtures ensure architectural guarantees remain intact.
+Architectural guarantees are protected by invariant fixtures.
 
 Location:
-
 architecture/runtime/tests/invariants/
 
 Validator:
-
 architecture/runtime/scripts/validate_invariants.py
 
-These fixtures protect structural properties such as:
-
+These enforce properties such as:
 - routing table integrity
 - cloud providers disabled by default
-- logging defaults (metadata-only)
+- logging defaults (metadata‑only)
 
 ---
 
-### Regression Enforcement
+# Regression Enforcement
 
-Critical execution guarantees are protected through regression tests.
+Critical execution guarantees are protected by regression tests.
 
 Example:
-
 tests/test_audit_gate_contract.py
 
-This test ensures the **audit gate contract** cannot accidentally expand beyond defined bounds.
+This test ensures the **audit gate contract remains bounded**.
 
 ---
 
-## Core Invariants
+# Core Invariants
 
-The architecture enforces the following guarantees:
-
+IO‑III enforces the following system‑level guarantees:
 - deterministic routing only
 - challenger enforcement internal to the engine
 - audit execution explicitly user‑toggled
@@ -175,14 +232,13 @@ The architecture enforces the following guarantees:
 - no multi‑pass execution chains
 - single unified final output
 
-These guarantees are treated as **contract‑level invariants**.
+These are treated as **contract‑level invariants**.
 
 ---
 
-## Non‑Goals (Intentional Constraints)
+# Non‑Goals (Intentional Constraints)
 
-This repository intentionally does **not** implement:
-
+The project intentionally does **not** implement:
 - persistent memory
 - retrieval systems (RAG / embeddings)
 - autonomous planning
@@ -192,16 +248,15 @@ This repository intentionally does **not** implement:
 - automatic audit policies
 
 Future expansion must preserve:
-
 - deterministic control‑plane execution
 - bounded runtime guarantees
 - invariant enforcement
 
 ---
 
-## Milestones
+# Milestones
 
-### Phase 1 — Control Plane Stabilisation ✅
+### Phase 1 — Control Plane Stabilisation
 
 - deterministic routing
 - challenger enforcement (ADR‑008)
@@ -209,40 +264,51 @@ Future expansion must preserve:
 - invariant validation suite
 - regression enforcement
 
----
-
-### Phase 2 — Structural Consolidation ✅
+### Phase 2 — Structural Consolidation
 
 - SessionState v0 implemented
 - execution engine extracted
 - CLI → engine boundary established
 - context assembly integrated (ADR‑010)
-- ExecutionContext introduced (engine‑local runtime container)
+- ExecutionContext introduced
 - challenger ownership consolidated inside the engine
 - provider injection seams implemented
 - tests passing (pytest)
 - invariant validator passing
 
----
-
 ### Phase 3 — Capability Layer (Planned)
 
-Phase 3 introduces **additional engine‑local capability boundaries** while preserving deterministic execution.
+Phase 3 introduces additional **engine‑local capability boundaries** while preserving deterministic execution.
 
 Planned work includes:
-
 - expanding provider abstraction contracts
-- strengthening test seams and injection boundaries
-- defining engine‑local capability interfaces
+- strengthening dependency‑injection seams
+- defining capability interfaces inside the execution engine
 
-No autonomous behaviour or dynamic routing will be introduced in this phase.
+No autonomous behaviour or dynamic routing will be introduced.
 
 ---
 
-## Project Status
+# What This Project Demonstrates
+
+IO‑III is an architecture‑focused LLM project rather than a feature‑driven AI tool.
+
+The repository demonstrates:
+- systems architecture thinking
+- deterministic runtime design
+- governance‑driven engineering (ADR‑first development)
+- invariant‑protected architecture
+- bounded execution guarantees for LLM systems
+- separation between control plane and runtime providers
+
+The project intentionally prioritises **structural integrity and architectural guarantees** over rapid feature expansion.
+
+---
+
+# Project Status
 
 Phase 1 — Control Plane Stabilised  
 Phase 2 — Structural Consolidation Complete  
 Phase 3 — Capability Layer (Next)
 
-IO‑III prioritises **structural guarantees, determinism, and governance discipline** over feature velocity.
+IO‑III prioritises **determinism, governance discipline, and architectural clarity** over feature velocity.
