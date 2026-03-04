@@ -98,6 +98,8 @@ def test_capability_invocation_attaches_meta_for_ollama_route(monkeypatch):
     assert "capability" in res.meta
     assert res.meta["capability"]["capability_id"] == "test.echo"
     assert res.meta["capability"]["output"] == {"echo": {"a": 1}}
+    assert isinstance(res.meta["capability"].get("duration_ms"), int)
+    assert res.meta["capability"]["duration_ms"] >= 0
 
 
 def test_capability_rejects_nonexistent_id(monkeypatch):

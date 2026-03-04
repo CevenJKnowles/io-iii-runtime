@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Mapping
 
@@ -160,7 +161,10 @@ def _invoke_capability_once(
             f"CAPABILITY_INPUT_TOO_LARGE: {in_len} chars > max_input_chars={spec.bounds.max_input_chars}"
         )
 
+    # Time the invocation (content-safe; structural observability only)
+    t0 = time.perf_counter_ns()
     res = cap.invoke(ctx, payload)
+    duration_ms = int((time.perf_counter_ns() - t0) / 1_000_000)
 
     out_len = _safe_json_len(res.output)
     if out_len > spec.bounds.max_output_chars:
@@ -174,6 +178,7 @@ def _invoke_capability_once(
         "category": spec.category.value,
         "ok": bool(res.ok),
         "error_code": res.error_code,
+        "duration_ms": duration_ms,
         "output": res.output,
     }
 

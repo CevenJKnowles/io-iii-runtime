@@ -200,6 +200,12 @@ def cmd_run(args) -> int:
             trace_steps = len(trace_obj["steps"])
             trace_total_ms = sum(int(s.get("duration_ms", 0)) for s in trace_obj["steps"] if isinstance(s, dict))
 
+        cap_meta = result.meta.get("capability") if isinstance(result.meta, dict) else None
+        capability_ok = cap_meta.get("ok") if isinstance(cap_meta, dict) else None
+        capability_version = cap_meta.get("version") if isinstance(cap_meta, dict) else None
+        capability_duration_ms = cap_meta.get("duration_ms") if isinstance(cap_meta, dict) else None
+        capability_error_code = cap_meta.get("error_code") if isinstance(cap_meta, dict) else None
+
         # Metadata logging (NO prompt/response content; prompt_hash is safe)
         latency_ms = int((time.perf_counter() - t0) * 1000)
         append_metadata(
@@ -216,6 +222,10 @@ def cmd_run(args) -> int:
                 "fallback_reason": getattr(selection, "fallback_reason", None),
                 "selected_primary": getattr(selection, "primary_target", None),
                 "capability_id": cap_id,
+                "capability_ok": capability_ok,
+                "capability_version": capability_version,
+                "capability_duration_ms": capability_duration_ms,
+                "capability_error_code": capability_error_code,
                 "trace_steps": trace_steps,
                 "trace_total_ms": trace_total_ms,
             },
@@ -241,6 +251,8 @@ def cmd_run(args) -> int:
                 "fallback_reason": getattr(selection, "fallback_reason", None),
                 "selected_primary": getattr(selection, "primary_target", None),
                 "capability_id": cap_id,
+                "capability_ok": False if cap_id else None,
+                "capability_error_code": type(e).__name__ if cap_id else None,
             },
         )
         raise
@@ -280,49 +292,6 @@ def cmd_about(args) -> int:
     return 0
 
 
-
-def cmd_capabilities(args: argparse.Namespace) -> int:
-    """List registered capabilities.
-
-    This is an informational command only. It does not perform capability invocation.
-    """
-    reg = builtin_registry()
-    specs = list(reg.specs().values())
-
-    if getattr(args, "json", False):
-        payload = [
-            {
-                "id": s.capability_id,
-                "version": s.version,
-                "category": str(s.category),
-                "description": s.description,
-                "bounds": {
-                    "max_calls": s.bounds.max_calls,
-                    "timeout_ms": s.bounds.timeout_ms,
-                    "max_input_chars": s.bounds.max_input_chars,
-                    "max_output_chars": s.bounds.max_output_chars,
-                    "side_effects_allowed": s.bounds.side_effects_allowed,
-                },
-            }
-            for s in specs
-        ]
-        print(json.dumps({"capabilities": payload}, indent=2, sort_keys=True))
-        return 0
-
-    if not specs:
-        print("No capabilities registered.")
-        return 0
-
-    print("Registered capabilities:")
-    for s in specs:
-        b = s.bounds
-        print(
-            f"- {s.capability_id} (v{s.version}) — {s.description} "
-            f"[max_calls={b.max_calls}, timeout_ms={b.timeout_ms}, "
-            f"max_input_chars={b.max_input_chars}, max_output_chars={b.max_output_chars}, "
-            f"side_effects_allowed={b.side_effects_allowed}]"
-        )
-    return 0
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="io-iii")
     parser.add_argument(
@@ -358,10 +327,6 @@ def main(argv=None) -> int:
         help="JSON object payload for capability invocation (must be a JSON object).",
     )
     p_run.set_defaults(func=cmd_run)
-
-    p_caps = sub.add_parser("capabilities", help="List registered capabilities")
-    p_caps.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-    p_caps.set_defaults(func=cmd_capabilities)
 
     p_about = sub.add_parser("about")
     p_about.set_defaults(func=cmd_about)

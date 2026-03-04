@@ -112,6 +112,13 @@ Optional keys may be included to support debugging and governance traceability.
 | `provider_host` | string \| null | host used for provider (safe infrastructure metadata) |
 | `error_code` | string \| null | stable error code if status is error |
 | `status` | string \| null | `ok` \| `error` |
+| `capability_id` | string \| null | explicit capability ID (if invoked) |
+| `capability_ok` | boolean \| null | capability invocation success flag (summary only) |
+| `capability_version` | string \| null | capability version (summary only) |
+| `capability_duration_ms` | integer \| null | capability invocation duration in ms (summary only) |
+| `capability_error_code` | string \| null | capability error code (summary only; no messages) |
+| `trace_steps` | integer \| null | number of recorded execution trace steps |
+| `trace_total_ms` | integer \| null | sum of trace step durations |
 
 ---
 
