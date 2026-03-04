@@ -240,6 +240,18 @@ All Phase 3 work must remain consistent with the constraints defined here.
 
 ---
 
+## Reference Implementation (Phase 3)
+
+Phase 3 introduces the capability layer as a set of **contracts and static declarations** before any runtime wiring.
+
+Canonical contract implementation (Phase 3 M3.2):
+- `io_iii/core/capabilities.py` — capability interface, bounds, and static registry
+- `io_iii/tests/test_capabilities_contract.py` — contract regression tests
+
+This reference implementation is intentionally **non-executing**: it defines the boundary surface without introducing dynamic loading, autonomous invocation, or orchestration changes.
+
+---
+
 ## Summary
 
 The Capability Layer provides a structured mechanism for expanding IO-III functionality while preserving the deterministic and governance-first architecture of the system.
