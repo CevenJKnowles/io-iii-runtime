@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "io-iii"
+version = "0.3.0"
+description = "IO-III deterministic local LLM runtime (governance-first control-plane)."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  {name = "Ceven Jupiter Knowles"}
+]
+keywords = ["llm", "runtime", "deterministic", "governance", "control-plane"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "-q"
