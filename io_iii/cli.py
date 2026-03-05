@@ -98,7 +98,11 @@ def cmd_capabilities(args) -> int:
                 "id": getattr(spec, "id", None),
                 "version": getattr(spec, "version", None),
                 "description": getattr(spec, "description", None),
-                "category": str(getattr(spec, "category", None)),
+                "category": getattr(
+                    getattr(spec, "category", None),
+                    "value",
+                    str(getattr(spec, "category", None)),
+                ),
                 "bounds": bounds_payload,
             }
         )
