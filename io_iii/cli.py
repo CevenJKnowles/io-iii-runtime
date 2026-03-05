@@ -11,7 +11,7 @@ from io_iii.routing import resolve_route
 from io_iii.providers.ollama_provider import OllamaProvider
 from io_iii.persona_contract import PERSONA_CONTRACT_VERSION
 from io_iii.core.engine import run as engine_run
-from io_iii.core.session_state import SessionState, RouteInfo, AuditGateState
+from io_iii.core.session_state import SessionState, RouteInfo, AuditGateState, validate_session_state
 
 # Phase 3 seams
 from io_iii.core.dependencies import RuntimeDependencies
@@ -219,6 +219,9 @@ def cmd_run(args) -> int:
         logging_policy=cfg.logging,
     )
 
+    # Defensive invariant enforcement (SessionState v0)
+    validate_session_state(state)
+
     # Phase 3: explicit dependency bundle (injection seams)
     deps = RuntimeDependencies(
         ollama_provider_factory=OllamaProvider.from_config,
@@ -236,6 +239,9 @@ def cmd_run(args) -> int:
             capability_id=cap_id,
             capability_payload=cap_payload,
         )
+
+        # Defensive invariant enforcement (SessionState v0)
+        validate_session_state(state2)
 
         payload = {
             "logging_policy": cfg.logging,
@@ -375,6 +381,9 @@ def cmd_capability(args) -> int:
         logging_policy=cfg.logging,
     )
 
+    # Defensive invariant enforcement (SessionState v0)
+    validate_session_state(state)
+
     deps = RuntimeDependencies(
         ollama_provider_factory=OllamaProvider.from_config,
         challenger_fn=None,
@@ -391,6 +400,9 @@ def cmd_capability(args) -> int:
             capability_id=cap_id,
             capability_payload=cap_payload,
         )
+
+        # Defensive invariant enforcement (SessionState v0)
+        validate_session_state(state2)
 
         # Capability summary (content-safe; MUST NOT include output)
         cap_meta = result.meta.get("capability") if isinstance(result.meta, dict) else None
