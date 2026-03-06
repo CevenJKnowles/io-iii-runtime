@@ -57,6 +57,219 @@ class ExecutionResult:
     prompt_hash: Optional[str]
 
 
+def _run_null_route(
+    *,
+    cfg,
+    session_state: SessionState,
+    trace: TraceRecorder,
+    capability_meta: Optional[Dict[str, Any]],
+) -> Tuple[SessionState, ExecutionResult]:
+    """Execute the null provider route.
+
+    Notes:
+    - No context assembly.
+    - Never logs prompt or model output.
+    """
+    provider = NullProvider()
+
+    # Engine-local execution context (no content; no assembly for null route)
+    _exec_ctx = ExecutionContext(
+        cfg=cfg,
+        session_state=session_state,
+        provider=provider,
+        route=session_state.route,
+        prompt_hash=None,
+        assembled_context=None,
+    )
+
+    with trace.step("provider_run", meta={"provider": "null"}):
+        result_obj = provider.run(mode=session_state.mode, route_id=session_state.route_id, meta={})
+    message = getattr(result_obj, "message", "")
+    meta = dict(getattr(result_obj, "meta", {}))
+
+    trace_dict = trace.trace.to_dict()
+    assert_no_forbidden_keys(trace_dict)
+    meta["trace"] = trace_dict
+
+    if capability_meta is not None:
+        assert_no_forbidden_keys(capability_meta)
+        meta["capability"] = capability_meta
+
+    state2 = _replace(session_state, status="ok", provider="null", model=None)
+    return state2, ExecutionResult(
+        message=message,
+        meta=meta,
+        provider="null",
+        model=None,
+        route_id=state2.route_id,
+        audit_meta=None,
+        prompt_hash=None,
+    )
+
+
+def _assemble_executor_context(
+    *,
+    cfg,
+    session_state: SessionState,
+    user_prompt: str,
+    trace: TraceRecorder,
+    provider,
+) -> Any:
+    """Assemble ADR-010 context for the executor path."""
+    with trace.step(
+        "context_assembly",
+        meta={
+            "persona_contract_version": PERSONA_CONTRACT_VERSION,
+            "route_id": session_state.route_id,
+        },
+    ):
+        assembled = assemble_context(
+            session_state=session_state,
+            user_prompt=user_prompt,
+            persona_contract=EXECUTOR_PERSONA_CONTRACT,
+            route_metadata={
+                "selected_provider": session_state.provider,
+                "selected_target": session_state.route.selected_target,
+                "fallback_used": session_state.route.fallback_used,
+                "route_id": session_state.route_id,
+            },
+        )
+
+    # Engine-local execution context (content-safe: stores hash, not prompt text)
+    _exec_ctx = ExecutionContext(
+        cfg=cfg,
+        session_state=session_state,
+        provider=provider,
+        route=session_state.route,
+        prompt_hash=assembled.prompt_hash,
+        assembled_context=assembled,
+    )
+
+    return assembled
+
+
+def _run_executor_inference(*, provider, model: str, assembled, trace: TraceRecorder) -> str:
+    """Run the executor inference call (ollama provider)."""
+    # Keep historical suffix while ADR-010 provides the canonical system prompt.
+    final_prompt = f"{assembled.system_prompt}\n\nUser:\n{assembled.user_prompt}\n\nIO-III:"
+    with trace.step(
+        "provider_inference",
+        meta={"provider": "ollama", "model": model},
+    ):
+        return provider.generate(model=model, prompt=final_prompt).strip()
+
+
+def _run_revision(
+    *,
+    cfg,
+    session_state: SessionState,
+    user_prompt: str,
+    original_text: str,
+    audit_result: Dict[str, Any],
+    provider,
+    model: str,
+    trace: TraceRecorder,
+) -> str:
+    """Run a single bounded revision pass (ADR-009)."""
+    revision_user_prompt = (
+        "You are IO-III Executor performing a single controlled revision.\n"
+        "Address the challenger feedback below.\n"
+        "You MUST NOT introduce new facts.\n"
+        "Preserve user intent.\n\n"
+        f"USER_PROMPT:\n{user_prompt}\n\n"
+        f"ORIGINAL_DRAFT:\n{original_text}\n\n"
+        f"CHALLENGER_FEEDBACK:\n{json.dumps(audit_result, indent=2)}\n\n"
+        "Produce the improved final answer only."
+    )
+
+    with trace.step(
+        "revision_context_assembly",
+        meta={
+            "persona_contract_version": PERSONA_CONTRACT_VERSION,
+            "route_id": session_state.route_id,
+        },
+    ):
+        assembled_rev = assemble_context(
+            session_state=session_state,
+            user_prompt=revision_user_prompt,
+            persona_contract=EXECUTOR_PERSONA_CONTRACT,
+            route_metadata={
+                "selected_provider": session_state.provider,
+                "selected_target": session_state.route.selected_target,
+                "fallback_used": session_state.route.fallback_used,
+                "route_id": session_state.route_id,
+            },
+        )
+
+    revision_prompt = f"{assembled_rev.system_prompt}\n\nUser:\n{assembled_rev.user_prompt}\n\nIO-III:"
+
+    with trace.step("revision_inference", meta={"provider": "ollama", "model": model}):
+        return provider.generate(model=model, prompt=revision_prompt).strip()
+
+
+def _apply_audit_gate(
+    *,
+    cfg,
+    session_state: SessionState,
+    user_prompt: str,
+    draft_text: str,
+    provider,
+    model: str,
+    trace: TraceRecorder,
+    challenger_fn,
+    audit: bool,
+) -> Tuple[str, Dict[str, Any], int, int]:
+    """Apply optional challenger audit + bounded revision (ADR-009)."""
+    audit_meta: Dict[str, Any] = {
+        "audit_used": False,
+        "audit_verdict": None,
+        "revised": False,
+    }
+
+    # Hard-limit counters (ADR-009)
+    audit_passes = 0
+    revision_passes = 0
+
+    text = draft_text
+
+    if not audit:
+        return text, audit_meta, audit_passes, revision_passes
+
+    if audit_passes >= MAX_AUDIT_PASSES:
+        raise RuntimeError(
+            f"AUDIT_LIMIT_EXCEEDED: audit_passes={audit_passes} max={MAX_AUDIT_PASSES}"
+        )
+    audit_passes += 1
+
+    with trace.step("challenger_audit", meta={"enabled": True}):
+        audit_result = challenger_fn(cfg, user_prompt, text)
+    audit_meta["audit_used"] = True
+    audit_meta["audit_verdict"] = audit_result.get("verdict")
+
+    if audit_result.get("verdict") != "needs_work":
+        return text, audit_meta, audit_passes, revision_passes
+
+    if revision_passes >= MAX_REVISION_PASSES:
+        raise RuntimeError(
+            f"REVISION_LIMIT_EXCEEDED: revision_passes={revision_passes} max={MAX_REVISION_PASSES}"
+        )
+    revision_passes += 1
+
+    text = _run_revision(
+        cfg=cfg,
+        session_state=session_state,
+        user_prompt=user_prompt,
+        original_text=text,
+        audit_result=audit_result,
+        provider=provider,
+        model=model,
+        trace=trace,
+    )
+    audit_meta["revised"] = True
+
+    return text, audit_meta, audit_passes, revision_passes
+
+
 def _run_challenger(
     cfg,
     user_prompt: str,
@@ -361,40 +574,11 @@ def run(
 
     # Null route
     if session_state.provider != "ollama":
-        provider = NullProvider()
-
-        # Engine-local execution context (no content; no assembly for null route)
-        _exec_ctx = ExecutionContext(
+        return _run_null_route(
             cfg=cfg,
             session_state=session_state,
-            provider=provider,
-            route=session_state.route,
-            prompt_hash=None,
-            assembled_context=None,
-        )
-
-        with trace.step("provider_run", meta={"provider": "null"}):
-            result_obj = provider.run(mode=session_state.mode, route_id=session_state.route_id, meta={})
-        message = getattr(result_obj, "message", "")
-        meta = dict(getattr(result_obj, "meta", {}))
-
-        trace_dict = trace.trace.to_dict()
-        assert_no_forbidden_keys(trace_dict)
-        meta["trace"] = trace_dict
-
-        if capability_meta is not None:
-            assert_no_forbidden_keys(capability_meta)
-            meta["capability"] = capability_meta
-
-        state2 = _replace(session_state, status="ok", provider="null", model=None)
-        return state2, ExecutionResult(
-            message=message,
-            meta=meta,
-            provider="null",
-            model=None,
-            route_id=state2.route_id,
-            audit_meta=None,
-            prompt_hash=None,
+            trace=trace,
+            capability_meta=capability_meta,
         )
 
     # Ollama route
@@ -406,108 +590,27 @@ def run(
     _, model = _parse_target(session_state.route.selected_target)
     provider = ollama_provider_factory(cfg.providers)
 
-    with trace.step(
-        "context_assembly",
-        meta={
-            "persona_contract_version": PERSONA_CONTRACT_VERSION,
-            "route_id": session_state.route_id,
-        },
-    ):
-        assembled = assemble_context(
-            session_state=session_state,
-            user_prompt=user_prompt,
-            persona_contract=EXECUTOR_PERSONA_CONTRACT,
-            route_metadata={
-                "selected_provider": session_state.provider,
-                "selected_target": session_state.route.selected_target,
-                "fallback_used": session_state.route.fallback_used,
-                "route_id": session_state.route_id,
-            },
-        )
-
-    # Engine-local execution context (content-safe: stores hash, not prompt text)
-    _exec_ctx = ExecutionContext(
+    assembled = _assemble_executor_context(
         cfg=cfg,
         session_state=session_state,
+        user_prompt=user_prompt,
+        trace=trace,
         provider=provider,
-        route=session_state.route,
-        prompt_hash=assembled.prompt_hash,
-        assembled_context=assembled,
     )
 
-    # Keep historical suffix while ADR-010 provides the canonical system prompt.
-    final_prompt = f"{assembled.system_prompt}\n\nUser:\n{assembled.user_prompt}\n\nIO-III:"
-    with trace.step(
-        "provider_inference",
-        meta={"provider": "ollama", "model": model},
-    ):
-        text = provider.generate(model=model, prompt=final_prompt).strip()
+    text = _run_executor_inference(provider=provider, model=model, assembled=assembled, trace=trace)
 
-    audit_meta = {
-        "audit_used": False,
-        "audit_verdict": None,
-        "revised": False,
-    }
-
-    # Hard-limit counters (ADR-009)
-    audit_passes = 0
-    revision_passes = 0
-
-    # Challenger pass (optional)
-    if audit:
-        if audit_passes >= MAX_AUDIT_PASSES:
-            raise RuntimeError(
-                f"AUDIT_LIMIT_EXCEEDED: audit_passes={audit_passes} max={MAX_AUDIT_PASSES}"
-            )
-        audit_passes += 1
-
-        with trace.step("challenger_audit", meta={"enabled": True}):
-            audit_result = challenger_fn(cfg, user_prompt, text)
-        audit_meta["audit_used"] = True
-        audit_meta["audit_verdict"] = audit_result.get("verdict")
-
-        # Single bounded revision
-        if audit_result.get("verdict") == "needs_work":
-            if revision_passes >= MAX_REVISION_PASSES:
-                raise RuntimeError(
-                    f"REVISION_LIMIT_EXCEEDED: revision_passes={revision_passes} max={MAX_REVISION_PASSES}"
-                )
-            revision_passes += 1
-            revision_user_prompt = (
-                "You are IO-III Executor performing a single controlled revision.\n"
-                "Address the challenger feedback below.\n"
-                "You MUST NOT introduce new facts.\n"
-                "Preserve user intent.\n\n"
-                f"USER_PROMPT:\n{user_prompt}\n\n"
-                f"ORIGINAL_DRAFT:\n{text}\n\n"
-                f"CHALLENGER_FEEDBACK:\n{json.dumps(audit_result, indent=2)}\n\n"
-                "Produce the improved final answer only."
-            )
-
-            with trace.step(
-                "revision_context_assembly",
-                meta={
-                    "persona_contract_version": PERSONA_CONTRACT_VERSION,
-                    "route_id": session_state.route_id,
-                },
-            ):
-                assembled_rev = assemble_context(
-                    session_state=session_state,
-                    user_prompt=revision_user_prompt,
-                    persona_contract=EXECUTOR_PERSONA_CONTRACT,
-                    route_metadata={
-                        "selected_provider": session_state.provider,
-                        "selected_target": session_state.route.selected_target,
-                        "fallback_used": session_state.route.fallback_used,
-                        "route_id": session_state.route_id,
-                    },
-                )
-
-            revision_prompt = f"{assembled_rev.system_prompt}\n\nUser:\n{assembled_rev.user_prompt}\n\nIO-III:"
-
-            with trace.step("revision_inference", meta={"provider": "ollama", "model": model}):
-                text = provider.generate(model=model, prompt=revision_prompt).strip()
-            audit_meta["revised"] = True
+    text, audit_meta, audit_passes, revision_passes = _apply_audit_gate(
+        cfg=cfg,
+        session_state=session_state,
+        user_prompt=user_prompt,
+        draft_text=text,
+        provider=provider,
+        model=model,
+        trace=trace,
+        challenger_fn=challenger_fn,
+        audit=bool(audit),
+    )
 
     trace_dict = trace.trace.to_dict()
     assert_no_forbidden_keys(trace_dict)
