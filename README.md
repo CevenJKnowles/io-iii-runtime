@@ -283,7 +283,6 @@ Core modules:
 | `cli.py` | CLI entrypoint |
 
 Execution path:
-
 `CLI → Engine.run() → ExecutionContext → Context Assembly → Provider → Challenger (optional)`
 
 ---
