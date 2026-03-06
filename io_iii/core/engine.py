@@ -479,6 +479,183 @@ def _invoke_capability_once(
     }
 
 
+
+def _invoke_capability_if_requested(
+    *,
+    cfg,
+    session_state: SessionState,
+    deps,
+    trace: TraceRecorder,
+    capability_id: Optional[str],
+    capability_payload: Optional[Mapping[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    """Execute a single explicit capability call when requested."""
+    capability_meta: Optional[Dict[str, Any]] = None
+
+    if deps is None or not capability_id:
+        return capability_meta
+
+    payload = _validate_capability_payload(capability_payload)
+    ctx = CapabilityContext(cfg=cfg, session_state=session_state, execution_context=None)
+    cap_trace_meta: Dict[str, Any] = {
+        "capability_id": capability_id,
+        "success": None,
+        "error_code": None,
+    }
+
+    with trace.step("capability_execution", meta=cap_trace_meta):
+        try:
+            capability_meta = _invoke_capability_once(
+                registry=deps.capability_registry,
+                capability_id=capability_id,
+                payload=payload,
+                ctx=ctx,
+            )
+            cap_trace_meta["success"] = bool(capability_meta.get("ok"))
+            cap_trace_meta["error_code"] = capability_meta.get("error_code")
+        except Exception as e:
+            cap_trace_meta["success"] = False
+            cap_trace_meta["error_code"] = _capability_error_code_from_exc(e)
+            raise
+
+    return capability_meta
+
+
+def _bind_challenger(
+    *,
+    challenger_fn,
+    cfg,
+    session_state: SessionState,
+    ollama_provider_factory,
+):
+    """Return a challenger callable with the provider factory bound."""
+    if challenger_fn is not None:
+        return challenger_fn
+
+    def _default_challenger(cfg_, prompt_, draft_):
+        # Backwards-compatibility: some tests monkeypatch _run_challenger with a
+        # 3-arg callable. Prefer the explicit provider factory when supported.
+        try:
+            return _run_challenger(
+                cfg_,
+                prompt_,
+                draft_,
+                ollama_provider_factory=ollama_provider_factory,
+                session_state=session_state,
+            )
+        except TypeError:
+            return _run_challenger(cfg_, prompt_, draft_)
+
+    return _default_challenger
+
+
+def _mirror_audit_flag(
+    *,
+    session_state: SessionState,
+    audit: bool,
+) -> SessionState:
+    """Mirror the explicit audit toggle into frozen SessionState."""
+    audit_state = AuditGateState(
+        audit_enabled=bool(audit),
+        audit_passes=session_state.audit.audit_passes,
+        revision_passes=session_state.audit.revision_passes,
+        audit_verdict=session_state.audit.audit_verdict,
+        revised=session_state.audit.revised,
+    )
+    return _replace(session_state, audit=audit_state)
+
+
+def _build_executor_meta(
+    *,
+    trace: TraceRecorder,
+    capability_meta: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Build content-safe executor metadata."""
+    trace_dict = trace.trace.to_dict()
+    assert_no_forbidden_keys(trace_dict)
+
+    meta: Dict[str, Any] = {
+        "persona_contract_version": PERSONA_CONTRACT_VERSION,
+        "trace": trace_dict,
+    }
+    if capability_meta is not None:
+        assert_no_forbidden_keys(capability_meta)
+        meta["capability"] = capability_meta
+    return meta
+
+
+def _run_ollama_route(
+    *,
+    cfg,
+    session_state: SessionState,
+    user_prompt: str,
+    audit: bool,
+    trace: TraceRecorder,
+    capability_meta: Optional[Dict[str, Any]],
+    ollama_provider_factory,
+    challenger_fn,
+) -> Tuple[SessionState, ExecutionResult]:
+    """Execute the ollama route with optional bounded audit + revision."""
+    from io_iii.routing import _parse_target
+
+    if session_state.route is None or not session_state.route.selected_target:
+        raise ValueError("No selected_target available for ollama route")
+
+    _, model = _parse_target(session_state.route.selected_target)
+    provider = ollama_provider_factory(cfg.providers)
+
+    assembled = _assemble_executor_context(
+        cfg=cfg,
+        session_state=session_state,
+        user_prompt=user_prompt,
+        trace=trace,
+        provider=provider,
+    )
+
+    text = _run_executor_inference(
+        provider=provider,
+        model=model,
+        assembled=assembled,
+        trace=trace,
+    )
+
+    text, audit_meta, audit_passes, revision_passes = _apply_audit_gate(
+        cfg=cfg,
+        session_state=session_state,
+        user_prompt=user_prompt,
+        draft_text=text,
+        provider=provider,
+        model=model,
+        trace=trace,
+        challenger_fn=challenger_fn,
+        audit=bool(audit),
+    )
+
+    meta = _build_executor_meta(trace=trace, capability_meta=capability_meta)
+
+    state2 = _replace(session_state, status="ok", provider="ollama", model=model)
+    state2 = _replace(
+        state2,
+        audit=AuditGateState(
+            audit_enabled=bool(audit),
+            audit_passes=audit_passes,
+            revision_passes=revision_passes,
+            audit_verdict=audit_meta["audit_verdict"],
+            revised=bool(audit_meta["revised"]),
+        ),
+    )
+
+    return state2, ExecutionResult(
+        message=text,
+        meta=meta,
+        provider="ollama",
+        model=model,
+        route_id=state2.route_id,
+        audit_meta=audit_meta if audit else None,
+        prompt_hash=assembled.prompt_hash,
+    )
+
+
 def run(
     *,
     cfg,
@@ -503,7 +680,6 @@ def run(
     - Audit toggle is explicit ('audit') and mirrored into SessionState.audit for traceability.
     - Capability invocation is explicit-only and bounded (Phase 3 M3.6).
     """
-    capability_meta: Optional[Dict[str, Any]] = None
     trace = TraceRecorder(trace_id=session_state.request_id)
 
     # Phase 3 injection seam: prefer explicit dependency bundle when provided.
@@ -518,61 +694,27 @@ def run(
         if challenger_fn is None and deps.challenger_fn is not None:
             challenger_fn = deps.challenger_fn
 
-        # Capability invocation surface (explicit-only)
-        if capability_id:
-            payload = _validate_capability_payload(capability_payload)
-            ctx = CapabilityContext(cfg=cfg, session_state=session_state, execution_context=None)
-            cap_trace_meta: Dict[str, Any] = {
-                "capability_id": capability_id,
-                "success": None,
-                "error_code": None,
-            }
-            with trace.step("capability_execution", meta=cap_trace_meta):
-                try:
-                    capability_meta = _invoke_capability_once(
-                        registry=deps.capability_registry,
-                        capability_id=capability_id,
-                        payload=payload,
-                        ctx=ctx,
-                    )
-                    cap_trace_meta["success"] = bool(capability_meta.get("ok"))
-                    cap_trace_meta["error_code"] = capability_meta.get("error_code")
-                except Exception as e:
-                    cap_trace_meta["success"] = False
-                    cap_trace_meta["error_code"] = _capability_error_code_from_exc(e)
-                    raise
+    capability_meta = _invoke_capability_if_requested(
+        cfg=cfg,
+        session_state=session_state,
+        deps=deps,
+        trace=trace,
+        capability_id=capability_id,
+        capability_payload=capability_payload,
+    )
 
     if ollama_provider_factory is None:
         ollama_provider_factory = OllamaProvider.from_config
 
-    # Allow dependency injection for tests (keeps CLI monkeypatch compatibility)
-    # Default challenger binds the provider factory explicitly to avoid scope leakage.
-    if challenger_fn is None:
-        def challenger_fn(cfg_, prompt_, draft_):
-            # Backwards-compatibility: some tests monkeypatch _run_challenger with a
-            # 3-arg callable. Prefer the explicit provider factory when supported.
-            try:
-                return _run_challenger(
-                    cfg_,
-                    prompt_,
-                    draft_,
-                    ollama_provider_factory=ollama_provider_factory,
-                    session_state=session_state,
-                )
-            except TypeError:
-                return _run_challenger(cfg_, prompt_, draft_)
-
-    # Mirror audit flag into state (frozen dataclass => rebuild audit field only)
-    audit_state = AuditGateState(
-        audit_enabled=bool(audit),
-        audit_passes=session_state.audit.audit_passes,
-        revision_passes=session_state.audit.revision_passes,
-        audit_verdict=session_state.audit.audit_verdict,
-        revised=session_state.audit.revised,
+    challenger = _bind_challenger(
+        challenger_fn=challenger_fn,
+        cfg=cfg,
+        session_state=session_state,
+        ollama_provider_factory=ollama_provider_factory,
     )
-    session_state = _replace(session_state, audit=audit_state)
 
-    # Null route
+    session_state = _mirror_audit_flag(session_state=session_state, audit=audit)
+
     if session_state.provider != "ollama":
         return _run_null_route(
             cfg=cfg,
@@ -581,70 +723,16 @@ def run(
             capability_meta=capability_meta,
         )
 
-    # Ollama route
-    from io_iii.routing import _parse_target
-
-    if session_state.route is None or not session_state.route.selected_target:
-        raise ValueError("No selected_target available for ollama route")
-
-    _, model = _parse_target(session_state.route.selected_target)
-    provider = ollama_provider_factory(cfg.providers)
-
-    assembled = _assemble_executor_context(
+    return _run_ollama_route(
         cfg=cfg,
         session_state=session_state,
         user_prompt=user_prompt,
-        trace=trace,
-        provider=provider,
-    )
-
-    text = _run_executor_inference(provider=provider, model=model, assembled=assembled, trace=trace)
-
-    text, audit_meta, audit_passes, revision_passes = _apply_audit_gate(
-        cfg=cfg,
-        session_state=session_state,
-        user_prompt=user_prompt,
-        draft_text=text,
-        provider=provider,
-        model=model,
-        trace=trace,
-        challenger_fn=challenger_fn,
         audit=bool(audit),
+        trace=trace,
+        capability_meta=capability_meta,
+        ollama_provider_factory=ollama_provider_factory,
+        challenger_fn=challenger,
     )
-
-    trace_dict = trace.trace.to_dict()
-    assert_no_forbidden_keys(trace_dict)
-    meta = {
-        "persona_contract_version": PERSONA_CONTRACT_VERSION,
-        "trace": trace_dict,
-    }
-    if capability_meta is not None:
-        assert_no_forbidden_keys(capability_meta)
-        meta["capability"] = capability_meta
-
-    state2 = _replace(session_state, status="ok", provider="ollama", model=model)
-    # Also reflect audit verdict/revised into state.audit (control-plane)
-    state2 = _replace(
-        state2,
-        audit=AuditGateState(
-            audit_enabled=bool(audit),
-            audit_passes=audit_passes,
-            revision_passes=revision_passes,
-            audit_verdict=audit_meta["audit_verdict"],
-            revised=bool(audit_meta["revised"]),
-        ),
-    )
-
-    return state2, ExecutionResult(
-        message=text,
-        meta=meta,
-        provider="ollama",
-        model=model,
-        route_id=state2.route_id,
-        audit_meta=audit_meta if audit else None,
-        prompt_hash=assembled.prompt_hash,
-    )
-
 
 def _replace(state: SessionState, **updates: Any) -> SessionState:
     """
