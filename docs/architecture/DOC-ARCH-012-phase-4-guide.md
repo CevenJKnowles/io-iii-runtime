@@ -3,7 +3,7 @@ id: DOC-ARCH-012
 title: Phase 4 Guide — Post-Capability Architecture Layer
 type: architecture
 status: active
-version: v0.2
+version: v0.3
 canonical: true
 scope: phase-4
 audience: developer
@@ -27,6 +27,8 @@ Phase 4 introduces the architectural layer above capabilities while preserving a
 
 The runtime kernel (routing, engine, context assembly, capability registry) is **frozen**. Phase 4 builds a layer *above* it, not inside it.
 
+The purpose of this phase is to introduce **bounded orchestration as a deterministic contract layer**, not to evolve IO-III into an agent, planner, or workflow engine.
+
 ---
 
 ## Invariants that must remain true
@@ -38,6 +40,8 @@ The runtime kernel (routing, engine, context assembly, capability registry) is *
 - no agent behaviour
 - no recursion
 - no dynamic routing
+- route resolution is static and table-driven from declared `TaskSpec.mode`
+- runtime outputs must never alter routing or step order
 
 ---
 
@@ -59,6 +63,8 @@ The runtime kernel (routing, engine, context assembly, capability registry) is *
 - self-directed recursion
 - dynamic routing based on output content
 - uncontrolled multi-step orchestration
+- output-driven branching between runbook steps
+- open-ended workflow execution semantics
 
 ---
 
@@ -66,26 +72,31 @@ The runtime kernel (routing, engine, context assembly, capability registry) is *
 
 ### M4.0 — Phase 4 ADR and Milestone Definition
 
-Author ADR-012: Bounded Orchestration Layer contract.
-Define all Phase 4 milestones formally in SESSION_STATE.md.
-Update this document from draft v0.1 to active v0.2 with milestone list.
+Author ADR-012: Bounded Orchestration Layer contract.  
+Define all Phase 4 milestones formally in SESSION_STATE.md.  
+Update this document from draft v0.2 to active v0.3 with milestone list.  
 Define Definition of Done criteria for Phase 4 completion.
 
 ---
 
 ### M4.1 — Task Specification Schema
 
-Define a `TaskSpec` data structure with explicit inputs, mode, and optional capability list.
+Define a serialisable `TaskSpec` contract object with explicit inputs, mode, and optional capability list.
 
 Properties:
 
-- `TaskSpec` compiles to exactly one `SessionState` and route — no branching
-- Must not encode loops, conditions, or planner logic
-- Document schema in DOC-RUN-006
+- `TaskSpec` compiles to exactly one `SessionState` and one static route
+- Route resolution is deterministic from declared `mode`
+- Must not encode loops, conditions, planner logic, or branching semantics
+- Must support stable identifiers for `task_spec_id` linkage in `SessionState`
+- Must define serialisation and validation rules for YAML/JSON transport
+
+Documentation  
+DOC-RUN-006
 
 ---
 
-### M4.2 — Bounded Orchestration Layer
+### M4.2 — Single-Run Bounded Orchestration Layer
 
 Introduce an `Orchestrator` that accepts a `TaskSpec` and executes exactly one bounded run.
 
@@ -97,11 +108,16 @@ TaskSpec
 → context assembly / capability registry  
 → bounded execution  
 → execution trace  
-→ content-safe metadata logging
+→ content-safe metadata projection
 
-Hard bound: one executor pass, one optional challenger pass (ADR-009 contract preserved).
+Hard bound: one executor pass, one optional challenger pass (ADR-009 preserved).
 
-Must not introduce: multi-step loops, recursion, autonomous tool selection.
+Must not introduce:
+
+- multi-step loops
+- recursion
+- autonomous tool selection
+- runtime-output-driven routing changes
 
 ---
 
@@ -115,13 +131,15 @@ Constraints:
 
 - Cannot transition backwards
 - Cannot skip terminal states
-- Add invariant covering trace lifecycle completeness
+- Invalid transitions raise hard failures
+- `ExecutionTrace` remains the canonical runtime record
+- `metadata.jsonl` is a content-safe projection of trace metadata only
 
 File  
 `io_iii/core/execution_trace.py`
 
 Documentation  
-DOC-RUN-005 (Execution Trace Schema) updated.
+DOC-RUN-005 (Execution Trace Schema) updated
 
 ---
 
@@ -132,11 +150,12 @@ Promote `SessionState` from v0 to v1 with stricter lifecycle semantics.
 Changes:
 
 - Define which fields are write-once vs mutable
-- Add `task_spec_id` field to link session state to originating task spec (if applicable)
+- Add `task_spec_id` field to link session state to originating task spec
+- Define lifecycle-safe mutation boundaries
 - Write migration note from v0 to v1
 
 Documentation  
-DOC-RUN-002 (SessionState Contract) updated.
+DOC-RUN-002 (SessionState Contract) updated
 
 ---
 
@@ -149,86 +168,40 @@ Expose structured per-stage timing in `ExecutionTrace`:
 - provider_ms
 - capability_ms
 
-`SessionState.latency_ms` remains the total. Trace carries the per-stage breakdown.
+`SessionState.latency_ms` remains total latency.
 
-No external tooling required. Structured data only, stays in `metadata.jsonl`.
+The trace stores canonical timing data.  
+`metadata.jsonl` stores only the content-safe projected timing fields.
 
 Documentation  
-DOC-ARCH-006 (Execution Observability) updated.
+DOC-ARCH-006 (Execution Observability) updated
 
 ---
 
-### M4.6 — Runbook Support (Bounded Multi-Capability)
+### M4.6 — Multi-Step Bounded Runbook Layer
 
-Define `Runbook` as an ordered, finite list of `TaskSpec` steps with no branching.
+Define `Runbook` as an ordered, serialisable, finite list of `TaskSpec` steps with no branching.
 
 Properties:
 
 - Explicit step count ceiling (maximum defined by ADR-013)
-- Each step is a single engine execution (ADR-009 preserved per step)
+- Each step is exactly one bounded engine execution
+- ADR-009 remains preserved per step
 - No conditional branching between steps
-- Termination is unconditional at step ceiling
+- No output-driven reordering
+- Termination is unconditional at the declared step ceiling
+- Runbooks exist for bounded composition only, never open workflow execution
 
 Author ADR-013: Runbook Execution Policy covering step ceiling and termination contract.
 
-This is the ceiling for orchestration complexity in IO-III.
+This milestone defines the **maximum orchestration complexity ceiling** for IO-III.
 
 ---
 
-### M4.7 — CLI Runbook Execution Command
+### M4.7 — CLI Task and Runbook Commands
 
 Introduce CLI commands for task and runbook execution:
 
-python -m io_iii run --task <task_spec.yaml>  
+```bash
+python -m io_iii run --task <task_spec.yaml>
 python -m io_iii runbook <runbook.yaml>
-
-Properties:
-
-- Expose execution trace and metadata output per step
-- `--dry-run` flag validates and prints resolved steps without executing
-- `--no-health-check` flag preserved for offline and CI use
-
----
-
-### M4.8 — Invariant Updates
-
-Add Phase 4 invariants to `validate_invariants.py`:
-
-- Orchestrator never executes more steps than declared in the runbook
-- `TaskSpec` always resolves to exactly one route
-- No step in a runbook may modify the routing table
-
-Add corresponding invariant YAML files in `architecture/runtime/tests/invariants/`.
-
----
-
-### M4.9 — Test Coverage
-
-Tests to be added:
-
-- `test_task_spec_resolution.py` — TaskSpec compiles to correct SessionState and route
-- `test_orchestrator_bounds.py` — Orchestrator respects step ceiling, does not recurse
-- `test_execution_trace_lifecycle.py` — Lifecycle state machine transitions
-- `test_runbook_execution.py` — End-to-end bounded runbook execution
-
----
-
-### M4.10 — Phase 4 Polish and Readiness Docs
-
-- Update ARCHITECTURE.md with orchestration layer description
-- Update SESSION_STATE.md for Phase 4 completion
-- Update DOC-ARCH-003 (Master Roadmap) to mark Phase 4 complete
-- Tag v0.4.0
-
----
-
-## Definition of done for Phase 4
-
-- Runtime kernel remains stable and unchanged
-- All Phase 4 milestones delivered
-- ADR-012 and ADR-013 authored and indexed
-- Invariant tests updated with Phase 4 invariants
-- All tests passing
-- All documentation current
-- SESSION_STATE.md reflects Phase 4 completion
-- v0.4.0 tagged
