@@ -27,6 +27,7 @@ from io_iii.core.capabilities import CapabilityContext, CapabilityRegistry
 from io_iii.core.content_safety import assert_no_forbidden_keys
 
 from io_iii.core.execution_trace import TraceRecorder
+from io_iii.core.engine_observability import EngineEventKind, EngineObservabilityLog
 
 
 def _capability_error_code_from_exc(exc: Exception) -> str:
@@ -315,6 +316,24 @@ def run(
     capability_meta: Optional[Dict[str, Any]] = None
     trace = TraceRecorder(trace_id=session_state.request_id)
 
+    # M4.5: Engine observability log — created alongside trace; engine-internal.
+    # Stable run identifiers cached before any _replace() rebind (write-once on SessionState).
+    _obs = EngineObservabilityLog()
+    _rid: str = session_state.request_id
+    _tsid: Optional[str] = session_state.task_spec_id
+
+    # Event 1: engine_run_started
+    _obs.emit(
+        EngineEventKind.RUN_STARTED,
+        request_id=_rid,
+        task_spec_id=_tsid,
+        meta={
+            "mode": session_state.mode,
+            "provider": session_state.provider,
+            "caller": "orchestrator" if _tsid is not None else "cli",
+        },
+    )
+
     # Phase 3 injection seam: prefer explicit dependency bundle when provided.
     if deps is not None:
         from io_iii.core.dependencies import RuntimeDependencies  # local import to avoid cycles
@@ -381,6 +400,18 @@ def run(
     )
     session_state = _replace(session_state, audit=audit_state)
 
+    # Event 2: route_resolved — routing snapshot confirmed from finalized SessionState.
+    _obs.emit(
+        EngineEventKind.ROUTE_RESOLVED,
+        request_id=_rid,
+        task_spec_id=_tsid,
+        meta={
+            "selected_provider": session_state.provider,
+            "route_id": session_state.route_id,
+            "fallback_used": session_state.route.fallback_used if session_state.route else False,
+        },
+    )
+
     # Null route
     if session_state.provider != "ollama":
         provider = NullProvider()
@@ -391,6 +422,14 @@ def run(
         message = getattr(result_obj, "message", "")
         meta = dict(getattr(result_obj, "meta", {}))
 
+        # Event 3: provider_execution_complete (null path)
+        _obs.emit(
+            EngineEventKind.PROVIDER_EXECUTION_COMPLETE,
+            request_id=_rid,
+            task_spec_id=_tsid,
+            meta={"provider": "null", "model": None},
+        )
+
         # M4.3: explicit lifecycle terminal state before serialisation.
         trace.complete()
         trace_dict = trace.trace.to_dict()
@@ -400,6 +439,21 @@ def run(
         if capability_meta is not None:
             assert_no_forbidden_keys(capability_meta)
             meta["capability"] = capability_meta
+
+        # Events 6–7: output_emitted → engine_run_complete (null path)
+        _obs.emit(
+            EngineEventKind.OUTPUT_EMITTED,
+            request_id=_rid,
+            task_spec_id=_tsid,
+            meta={"provider": "null", "model": None},
+        )
+        _obs.emit(
+            EngineEventKind.RUN_COMPLETE,
+            request_id=_rid,
+            task_spec_id=_tsid,
+            meta={"trace_step_count": len(trace.trace.steps)},
+        )
+        meta["engine_events"] = _obs.to_list()
 
         latency_ms = max(0, int(time.time() * 1000) - session_state.started_at_ms)
         state2 = _replace(session_state, status="ok", provider="null", model=None, latency_ms=latency_ms)
@@ -450,6 +504,14 @@ def run(
     ):
         text = provider.generate(model=model, prompt=final_prompt).strip()
 
+    # Event 3: provider_execution_complete (ollama path)
+    _obs.emit(
+        EngineEventKind.PROVIDER_EXECUTION_COMPLETE,
+        request_id=_rid,
+        task_spec_id=_tsid,
+        meta={"provider": "ollama", "model": model},
+    )
+
     audit_meta = {
         "audit_used": False,
         "audit_verdict": None,
@@ -472,6 +534,14 @@ def run(
             audit_result = challenger_fn(cfg, user_prompt, text)
         audit_meta["audit_used"] = True
         audit_meta["audit_verdict"] = audit_result.get("verdict")
+
+        # Event 4: challenger_audit_complete
+        _obs.emit(
+            EngineEventKind.CHALLENGER_AUDIT_COMPLETE,
+            request_id=_rid,
+            task_spec_id=_tsid,
+            meta={"verdict": audit_result.get("verdict"), "audit_passes": audit_passes},
+        )
 
         # Single bounded revision
         if audit_result.get("verdict") == "needs_work":
@@ -496,6 +566,14 @@ def run(
                 text = provider.generate(model=model, prompt=revision_prompt).strip()
             audit_meta["revised"] = True
 
+            # Event 5: revision_complete
+            _obs.emit(
+                EngineEventKind.REVISION_COMPLETE,
+                request_id=_rid,
+                task_spec_id=_tsid,
+                meta={"revision_passes": revision_passes},
+            )
+
     # M4.3: explicit lifecycle terminal state before serialisation.
     trace.complete()
     trace_dict = trace.trace.to_dict()
@@ -507,6 +585,21 @@ def run(
     if capability_meta is not None:
         assert_no_forbidden_keys(capability_meta)
         meta["capability"] = capability_meta
+
+    # Events 6–7: output_emitted → engine_run_complete (ollama path)
+    _obs.emit(
+        EngineEventKind.OUTPUT_EMITTED,
+        request_id=_rid,
+        task_spec_id=_tsid,
+        meta={"provider": "ollama", "model": model},
+    )
+    _obs.emit(
+        EngineEventKind.RUN_COMPLETE,
+        request_id=_rid,
+        task_spec_id=_tsid,
+        meta={"trace_step_count": len(trace.trace.steps)},
+    )
+    meta["engine_events"] = _obs.to_list()
 
     latency_ms = max(0, int(time.time() * 1000) - session_state.started_at_ms)
     state2 = _replace(session_state, status="ok", provider="ollama", model=model, latency_ms=latency_ms)
