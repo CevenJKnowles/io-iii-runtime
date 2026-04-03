@@ -290,6 +290,10 @@ def cmd_run(args) -> int:
                 int(s.get("duration_ms", 0)) for s in trace_obj["steps"] if isinstance(s, dict)
             )
 
+        # Engine observability summary (M4.5; structural count only — no event content)
+        engine_events_raw = result.meta.get("engine_events") if isinstance(result.meta, dict) else None
+        engine_event_count = len(engine_events_raw) if isinstance(engine_events_raw, list) else None
+
         # Capability summary (content-safe; MUST NOT include output)
         cap_meta = result.meta.get("capability") if isinstance(result.meta, dict) else None
 
@@ -325,6 +329,7 @@ def cmd_run(args) -> int:
                 "capability_error_code": capability_error_code,
                 "trace_steps": trace_steps,
                 "trace_total_ms": trace_total_ms,
+                "engine_event_count": engine_event_count,
             },
         )
 
@@ -440,6 +445,10 @@ def cmd_capability(args) -> int:
             capability_duration_ms = cap_meta.get("duration_ms")
             capability_error_code = cap_meta.get("error_code")
 
+        # Engine observability summary (M4.5; structural count only)
+        cap_engine_events = result.meta.get("engine_events") if isinstance(result.meta, dict) else None
+        cap_engine_event_count = len(cap_engine_events) if isinstance(cap_engine_events, list) else None
+
         latency_ms = int((time.perf_counter() - t0) * 1000)
         append_metadata(
             cfg.logging,
@@ -459,6 +468,7 @@ def cmd_capability(args) -> int:
                 "capability_version": capability_version,
                 "capability_duration_ms": capability_duration_ms,
                 "capability_error_code": capability_error_code,
+                "engine_event_count": cap_engine_event_count,
             },
         )
 

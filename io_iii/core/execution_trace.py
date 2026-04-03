@@ -76,12 +76,19 @@ class ExecutionTrace:
     status: str = "created"
 
     def to_dict(self) -> Dict[str, Any]:
+        # M4.5: structured per-stage timing summary (aggregated from steps; engine-owned).
+        # If a stage appears more than once, durations are summed.
+        stage_timings: Dict[str, int] = {}
+        for s in self.steps:
+            stage_timings[s.stage] = stage_timings.get(s.stage, 0) + s.duration_ms
+
         return {
             "schema": self.schema,
             "schema_version": self.schema_version,
             "trace_id": self.trace_id,
             "started_at_ms": self.started_at_ms,
             "status": self.status,
+            "stage_timings": stage_timings,
             "steps": [
                 {
                     "stage": s.stage,

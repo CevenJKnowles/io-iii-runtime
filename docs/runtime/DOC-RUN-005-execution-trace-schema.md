@@ -3,12 +3,12 @@ id: DOC-RUN-005
 title: IO-III Execution Trace Schema (ExecutionResult.meta.trace)
 type: runtime
 status: active
-version: v1.0
+version: v1.1
 canonical: true
 scope: io-iii
 audience: engineers
 created: "2026-03-04"
-updated: "2026-03-04"
+updated: "2026-04-03"
 tags:
   - runtime
   - observability
@@ -110,6 +110,21 @@ Current canonical stages (v1.0):
 
 ---
 
+## stage_timings field (M4.5)
+
+Added in v1.1 (Phase 4 M4.5).
+
+`stage_timings` is a derived summary dict attached at the top level of the trace object.
+
+- Keys are stage name strings (same values as `steps[].stage`).
+- Values are total `duration_ms` for all steps with that stage name (summed if a stage appears more than once).
+- Computed at serialisation time from `steps`; not stored separately.
+- Empty dict `{}` when no steps have been recorded.
+
+This field is additive and does not change the `schema_version` of existing step-level fields.
+
+---
+
 ## Example
 
 ```json
@@ -118,6 +133,11 @@ Current canonical stages (v1.0):
   "schema_version": "v1.0",
   "trace_id": "1719829123-12345",
   "started_at_ms": 1719829123123,
+  "status": "completed",
+  "stage_timings": {
+    "context_assembly": 8,
+    "provider_inference": 842
+  },
   "steps": [
     {
       "stage": "context_assembly",
@@ -144,3 +164,9 @@ M3.8 is complete when:
 1. Engine attaches `meta.trace` for all execution paths.
 2. Trace objects follow this schema.
 3. Tests enforce schema stability and absence of forbidden content keys.
+
+M4.5 additions:
+
+1. `stage_timings` is present in `to_dict()` output for all execution paths.
+2. `stage_timings` values are non-negative integers derived from `steps[].duration_ms`.
+3. `stage_timings` passes `assert_no_forbidden_keys`.
