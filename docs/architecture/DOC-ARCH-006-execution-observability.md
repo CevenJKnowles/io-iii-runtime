@@ -3,12 +3,12 @@ id: DOC-ARCH-006
 title: IO-III Execution Observability (Content-Safe Trace)
 type: architecture
 status: active
-version: v1.0
+version: v1.2
 canonical: true
 scope: io-iii
 audience: engineers
 created: "2026-03-04"
-updated: "2026-03-04"
+updated: "2026-04-03"
 tags:
   - architecture
   - runtime
@@ -121,3 +121,63 @@ M3.8 is complete when:
    - stable schema identifiers
    - stage ordering for at least one deterministic path
    - absence of forbidden content keys
+
+---
+
+## Phase 4 Extensions
+
+### M4.5 — Engine Lifecycle Events
+
+`EngineObservabilityLog` records structured per-run lifecycle events emitted by `engine.run()`.
+
+Each event carries: `kind`, `request_id`, `task_spec_id`, `timestamp_ms`, `meta`.
+
+Event sequence (successful run):
+
+1. `engine_run_started`
+2. `route_resolved`
+3. `provider_execution_complete`
+4. `challenger_audit_complete` (audit path only)
+5. `revision_complete` (revision path only)
+6. `output_emitted`
+7. `engine_run_complete`
+
+Events are content-safe. Meta fields carry only structural values (provider name, model identifier, audit verdict, step counts). No prompt or model output text.
+
+Events are attached to `ExecutionResult.meta["engine_events"]` on the success path.
+
+### M4.6 — Deterministic Failure Semantics
+
+On any exception, the engine guarantees:
+
+1. `ExecutionTrace.status` reaches `'failed'` (terminal state).
+2. `engine_run_failed` is emitted as the terminal lifecycle event in place of `engine_run_complete`. Meta carries `failure_kind`, `failure_code`, `phase`.
+3. A typed `RuntimeFailure` envelope is classified and attached to the original exception as `.runtime_failure`.
+4. The original exception type is preserved on re-raise — no wrapper exception.
+
+`RuntimeFailure` fields:
+
+| Field | Description |
+| --- | --- |
+| `kind` | `RuntimeFailureKind` — one of six stable categories |
+| `code` | Stable machine-readable identifier (e.g. `PROVIDER_UNAVAILABLE`) |
+| `summary` | Fixed category-level string; no prompt or model output text |
+| `request_id` | Session linkage |
+| `task_spec_id` | Upstream `TaskSpec` binding; `None` for CLI paths |
+| `retryable` | `True` only for `PROVIDER_UNAVAILABLE` |
+| `causal_code` | Stable code extracted from cause; `None` if unavailable |
+
+Failure categories:
+
+| Kind | Description |
+| --- | --- |
+| `route_resolution` | Routing table lookup failed |
+| `provider_execution` | Provider raised during generation or inference |
+| `audit_challenger` | Audit/revision pass failed or exceeded bounded limit |
+| `capability` | Capability raised, timed out, or exceeded bounds |
+| `contract_violation` | Invalid state, invariant breach, or structural violation |
+| `internal` | Unexpected failure not covered above |
+
+Every run terminates with exactly one terminal event: `engine_run_complete` (success) or `engine_run_failed` (failure).
+
+ADR: ADR-013 — Deterministic Failure Semantics

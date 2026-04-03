@@ -178,13 +178,34 @@ DOC-ARCH-006 (Execution Observability) updated
 
 ---
 
-### M4.6 — Multi-Step Bounded Runbook Layer
+### M4.6 — Deterministic Failure Semantics ✓ Complete
+
+Introduce a canonical deterministic failure model for the IO-III runtime.
+
+Contract:
+
+- Six stable failure categories (`RuntimeFailureKind`): `route_resolution`, `provider_execution`, `audit_challenger`, `capability`, `contract_violation`, `internal`
+- Typed, content-safe failure envelope (`RuntimeFailure`): frozen dataclass carrying `kind`, `code`, `summary`, `request_id`, `task_spec_id`, `retryable`, `causal_code`
+- On any engine exception, `RuntimeFailure` is attached to the original exception as `.runtime_failure`
+- Original exception type is preserved on re-raise (no wrapper exception)
+- Execution trace always reaches terminal `'failed'` state on exception
+- `engine_run_failed` lifecycle event always emitted on the failure path
+- CLI logs stable `failure.code` and `failure_kind` in metadata when available
+- `retryable=True` permitted only for `PROVIDER_UNAVAILABLE`
+- Content policy: `summary` and `causal_code` never carry prompt or model output text
+
+ADR  
+ADR-013 — Deterministic Failure Semantics
+
+---
+
+### M4.7 — Multi-Step Bounded Runbook Layer
 
 Define `Runbook` as an ordered, serialisable, finite list of `TaskSpec` steps with no branching.
 
 Properties:
 
-- Explicit step count ceiling (maximum defined by ADR-013)
+- Explicit step count ceiling
 - Each step is exactly one bounded engine execution
 - ADR-009 remains preserved per step
 - No conditional branching between steps
@@ -192,16 +213,4 @@ Properties:
 - Termination is unconditional at the declared step ceiling
 - Runbooks exist for bounded composition only, never open workflow execution
 
-Author ADR-013: Runbook Execution Policy covering step ceiling and termination contract.
-
 This milestone defines the **maximum orchestration complexity ceiling** for IO-III.
-
----
-
-### M4.7 — CLI Task and Runbook Commands
-
-Introduce CLI commands for task and runbook execution:
-
-```bash
-python -m io_iii run --task <task_spec.yaml>
-python -m io_iii runbook <runbook.yaml>

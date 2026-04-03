@@ -19,7 +19,7 @@ Current Phase
 Phase 4 — Post-Capability Architecture Layer
 
 Status
-Active (M4.4 complete; M4.5 next)
+Active (M4.6 complete; M4.7 next)
 
 Tag
 v0.3.2
@@ -501,11 +501,11 @@ End of Phase 3
 
 ---
 
-## Phase 4 Progress Update — M4.4 Complete
+## Phase 4 Progress Update — M4.6 Complete
 
 **Status:** Active  
 **Phase:** 4 — Post-Capability Architecture Layer  
-**Current Milestone:** M4.5 — Engine Observability Groundwork
+**Current Milestone:** M4.6 complete — M4.7 next
 
 ### Completed
 - M4.0 governance freeze completed through ADR-012, `DOC-ARCH-012`, and canonical milestone definition
@@ -513,17 +513,26 @@ End of Phase 3
 - M4.2 single-run bounded `Orchestrator` implemented and tested
 - M4.3 `ExecutionTrace` lifecycle contracts added with explicit transition guards
 - M4.4 `SessionState` promoted to v1 with explicit `task_spec_id` linkage
+- M4.5 Engine Observability Groundwork — structured per-stage `EngineEventKind` lifecycle events, `EngineObservabilityLog`, engine events in `ExecutionResult.meta`
+- M4.6 Deterministic Failure Semantics — canonical typed failure model across engine, trace, observability, and CLI surfaces
 
-### Current Contract State
-- `TaskSpec` is the canonical single-run execution input
-- `Orchestrator` resolves exactly one static route and delegates exactly one engine run
-- `ExecutionTrace` now carries explicit lifecycle states and invalid-transition guards
-- `SessionState` remains control-plane only and now carries schema version `v1`
-- `SessionState.status` remains a result code and is not unified with `ExecutionTrace.status`
+### M4.6 Contract Summary
 
-### Verification Snapshot
-- `pytest` passing on the user’s local Phase 4 checkpoint after M4.4
-- invariant validator previously passing at the last full architecture verification checkpoint
+- `RuntimeFailureKind` defines six stable failure categories: `route_resolution`, `provider_execution`, `audit_challenger`, `capability`, `contract_violation`, `internal`
+- `RuntimeFailure` is a frozen, content-safe dataclass carrying `kind`, `code`, `summary`, `request_id`, `task_spec_id`, `retryable`, `causal_code`
+- On any engine exception, `RuntimeFailure` is classified and attached as `.runtime_failure` on the original exception
+- Original exception type is preserved on re-raise — no wrapper exception
+- Execution trace always reaches terminal `’failed’` state on any exception
+- `engine_run_failed` lifecycle event always emitted on the failure path (content-safe)
+- CLI logs stable `failure.code` and `failure_kind` in metadata when available
+- `retryable=True` permitted only for `PROVIDER_UNAVAILABLE`
+- Content policy: `summary` and `causal_code` never carry prompt or model output text
+- ADR: ADR-013 — Deterministic Failure Semantics
+
+### Verification Snapshot (M4.6)
+
+- `pytest`: 174 passing
+- invariant validator: 1/1 passing
 
 ### Next Execution Target
-Implement M4.5 by adding structured per-stage timing fields to the execution trace while preserving `SessionState.latency_ms` as total latency only.
+M4.7 — Multi-Step Bounded Runbook Layer
