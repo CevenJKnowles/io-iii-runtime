@@ -12,7 +12,7 @@ audience:
   - reviewers
   - external-engineers
 created: "2026-03-04"
-updated: "2026-04-01"
+updated: "2026-04-11"
 tags:
   - io-iii
   - architecture
@@ -45,9 +45,6 @@ Each canonical document contains a YAML metadata header used for indexing and go
 |--------|--------|
 | DOC-OVW-001 | Architecture documentation index |
 | DOC-OVW-002 | IO-III persona prompt behaviour overview |
-| DOC-OVW-003 | Phase 3 capability layer roadmap |
-| DOC-OVW-004 | IO-III overview (2025-11-25) |
-| DOC-OVW-005 | Session snapshot (2026-03-04) |
 | DOC-OVW-006 | Session state — Phase 3 hardening complete (2026-03-06) |
 | DOC-OVW-007 | Session state — Phase 3 complete, gap-closed, and operational (2026-04-01) ← current |
 
