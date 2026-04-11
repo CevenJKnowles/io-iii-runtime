@@ -519,3 +519,39 @@ Phase 4 is complete. All milestones M4.0–M4.11 delivered.
 The frozen M4.7–M4.9 execution stack was not modified.
 Replay/resume is structurally isolated above it.
 Repository is in a taggable phase-close state (v0.4.0 candidate).
+
+---
+
+## Phase 5 Close State — v0.5.0
+
+**Status:** Complete
+
+**Phase:** 5 — Runtime Observability and Optimisation
+
+All three Phase 5 milestones are implemented, tested, and committed.
+Test count at phase close: 419 passing.
+
+### M5 Completed
+
+- M5.0 Governance freeze and ADR authorship — ADR-021 accepted and indexed;
+  Phase 5 milestone suite formally defined; freeze boundary established above M4.11
+- M5.1 Token Pre-flight Estimator — `io_iii/core/preflight.py`; heuristic character-count
+  estimator; `CONTEXT_LIMIT_EXCEEDED` failure code; configurable `runtime.context_limit_chars`;
+  prerequisite for Phase 6 M6.4 unblocked
+- M5.2 Execution Telemetry Metrics — `io_iii/core/telemetry.py` (`ExecutionMetrics`);
+  `OllamaProvider.generate_with_metrics()` surfaces `prompt_eval_count`/`eval_count`;
+  `ExecutionResult.meta["telemetry"]` and content-safe projection to `metadata.jsonl`
+- M5.3 Constellation Integrity Guard — `io_iii/core/constellation.py`; config-time
+  role-model collapse detection; required role binding validation; call chain bounds check;
+  `CONSTELLATION_DRIFT` failure code; `--no-constellation-check` bypass with mandatory stderr warning
+
+### Phase 5 Contracts
+
+- ADR-021 — Runtime Observability and Optimisation Contract
+- DOC-ARCH-013 — Phase 5 Guide
+
+### Execution Stack Freeze Boundary
+
+All Phase 1–4 components remain frozen.
+Phase 5 observability capabilities operate alongside the execution stack, not inside it.
+Phase 6 (Memory Architecture) is unblocked — M5.1 prerequisite satisfied.

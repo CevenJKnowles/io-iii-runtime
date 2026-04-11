@@ -1,0 +1,12 @@
+# IO-III Runtime Configuration
+# ADR-021: Runtime Observability and Optimisation Contract
+
+schema: "io-iii-runtime"
+version: "v1.0"
+
+# Token pre-flight estimator ceiling (ADR-021 §2, M5.1).
+# Character count limit applied to the fully assembled prompt before any
+# provider invocation. Heuristic: ~4 chars per token; 32,000 chars ≈ ~8,000
+# tokens. Raise this value for models with larger context windows.
+# Set to 0 to disable the check (not recommended for production use).
+context_limit_chars: 32000

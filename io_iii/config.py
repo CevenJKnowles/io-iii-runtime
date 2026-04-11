@@ -14,6 +14,7 @@ class IO3Config:
     providers: Dict[str, Any]
     logging: Dict[str, Any]
     routing: Dict[str, Any]
+    runtime: Dict[str, Any]
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -21,6 +22,7 @@ class IO3Config:
             "providers": self.providers,
             "logging": self.logging,
             "routing": self.routing,
+            "runtime": self.runtime,
         }
 
 
@@ -76,9 +78,14 @@ def load_io3_config(config_dir: Optional[Path] = None) -> IO3Config:
     logging = _load_yaml(cfg_dir / "logging.yaml")
     routing = _load_yaml(cfg_dir / "routing_table.yaml")
 
+    # runtime.yaml is optional — absent in older configs; defaults applied at use sites.
+    runtime_path = cfg_dir / "runtime.yaml"
+    runtime: Dict[str, Any] = _load_yaml(runtime_path) if runtime_path.exists() else {}
+
     return IO3Config(
         config_dir=cfg_dir,
         providers=providers,
         logging=logging,
         routing=routing,
+        runtime=runtime,
     )

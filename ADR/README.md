@@ -8,7 +8,7 @@ canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-01-09"
-updated: "2026-04-03"
+updated: "2026-04-11"
 tags:
   - "governance"
   - "adr"
@@ -86,3 +86,6 @@ architecture, implementation, and documentation.
 
 - **ADR-020 — Replay/Resume Execution Contract**
   Path: `./ADR/ADR-020-replay-resume-execution-contract.md`
+
+- **ADR-021 — Runtime Observability and Optimisation Contract**
+  Path: `./ADR/ADR-021-runtime-observability-optimisation.md`
