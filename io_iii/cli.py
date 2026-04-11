@@ -184,6 +184,18 @@ def cmd_run(args) -> int:
     request_id = make_request_id()
     t0 = time.perf_counter()
 
+    # M5.3: Constellation integrity guard (ADR-021 §4).
+    # Runs after config load, before routing resolution.
+    if getattr(args, "no_constellation_check", False):
+        import sys as _sys
+        print(
+            "WARN: constellation integrity check bypassed via --no-constellation-check",
+            file=_sys.stderr,
+        )
+    else:
+        from io_iii.core.constellation import check_constellation
+        check_constellation(cfg.routing)
+
     selection = resolve_route(
         routing_cfg=cfg.routing["routing_table"],
         mode=args.mode,
@@ -787,6 +799,12 @@ def main(argv=None) -> int:
         action="store_true",
         dest="no_health_check",
         help="Skip provider reachability check (for offline/CI use; ADR-011).",
+    )
+    p_run.add_argument(
+        "--no-constellation-check",
+        action="store_true",
+        dest="no_constellation_check",
+        help="Skip constellation integrity guard (for offline/CI use; ADR-021).",
     )
     p_run.set_defaults(func=cmd_run)
 
