@@ -6,8 +6,8 @@ Content boundaries are enforced recursively at the logging level. Every signific
 architectural decision is documented in an ADR before it is implemented. The system
 knows what it will not do, and that refusal is structural rather than conventional.
 
-Built over four design generations. Phase 4 complete. Phase 5 now active.
-Latest stable phase tag: `v0.4.0`.
+Built over five design generations. Phase 5 complete. Phase 6 planned.
+Latest stable phase tag: `v0.5.0`.
 
 ---
 
@@ -34,14 +34,15 @@ The Python runtime intentionally demonstrates the architecture without expanding
 
 ## Project Status
 
-| **Phase** | **Description**  | **Status** |
-|---|---|---|
-| 1 | Control Plane | Stabilised |
-| 2 | Structural Consolidation  | Complete |
-| 3 | Capability Layer | Complete  |
-| 4 | Context Architecture Formalisation  | Complete |
-| **5** | **Runtime Observability & Optimisation**  | **Active** |
-| *6* | *Memory Architecture* | *Planned* |
+| **Phase** | **Description** | **Status** | **Tag** |
+| --- | --- | --- | --- |
+| 1 | Control Plane | Complete | — |
+| 2 | Structural Consolidation | Complete | — |
+| 3 | Capability Layer | Complete | — |
+| 4 | Context Architecture Formalisation | Complete | `v0.4.0` |
+| 5 | Runtime Observability & Optimisation | **Complete** | `v0.5.0` |
+| *6* | *Memory Architecture* | *Planned* | — |
+| *7* | *Open-Source Initialisation Layer* | *Planned* | — |
 
 IO-III prioritises **determinism, governance discipline, and architectural clarity** over
 feature velocity.
@@ -60,12 +61,14 @@ The result is a runtime architecture that remains inspectable under failure, rep
 runbook → checkpoint → failure
                     ├── replay → step 0
                     └── resume → failed_step_index
+```
 
 ---
 
 ## Structural Guarantees
 
 Unlike feature-driven AI frameworks, IO-III focuses on structural guarantees:
+
 - deterministic routing
 - bounded execution
 - explicit audit gates
@@ -73,6 +76,7 @@ Unlike feature-driven AI frameworks, IO-III focuses on structural guarantees:
 - architecture-first governance
 
 The repository contains:
+
 1. a formal architecture specification layer (ADRs, invariants, contracts, governance rules)
 2. a minimal reference implementation of the runtime control plane
 
@@ -81,6 +85,7 @@ The repository contains:
 ## Non-Goals
 
 IO-III is intentionally **not**:
+
 - an agent framework
 - a dynamic tool orchestrator
 - a workflow engine
@@ -294,6 +299,9 @@ Core modules:
 | `core/context_assembly.py` | context assembly (ADR-010) |
 | `core/session_state.py` | control-plane state container |
 | `core/execution_context.py` | engine-local runtime container |
+| `core/preflight.py` | token pre-flight estimator (M5.1) |
+| `core/telemetry.py` | execution telemetry metrics (M5.2) |
+| `core/constellation.py` | constellation integrity guard (M5.3) |
 | `providers/null_provider.py` | null provider adaptor |
 | `providers/ollama_provider.py` | Ollama provider adaptor |
 | `cli.py` | CLI entrypoint |
@@ -377,7 +385,7 @@ Bounded capability extensions introduced inside the execution engine. Capabiliti
 deterministic, explicitly invoked, registry-controlled, and single-execution only. No
 autonomous behaviour or dynamic routing introduced.
 
-### Phase 4 - Context Architecture Formalisation (Active)
+### Phase 4 - Context Architecture Formalisation
 
 Phase 4 extends bounded runbook execution into deterministic continuity semantics.
 
@@ -393,10 +401,47 @@ Implemented guarantees:
 
 Execution continuity now remains bounded, deterministic, and structurally governed.
 
-### Phase 5 - Workflow State Stewardship (Active)
+### Phase 5 - Runtime Observability & Optimisation
 
-Phase 5 formalises workflow-continuity semantics above run continuity.
+Phase 5 introduces measurement and governance signals into the runtime without expanding its execution surface. The Phase 1–4 execution stack remains frozen throughout.
 
-The active objective is to elevate execution history into governed work-session state while preserving deterministic control-plane behaviour.
+Delivered capabilities:
+
+- **M5.1 Token Pre-flight Estimator** — heuristic character-count estimator enforcing a configurable context limit ceiling before every provider call; prerequisite for Phase 6 M6.4
+- **M5.2 Execution Telemetry Metrics** — `ExecutionMetrics` dataclass attached to `ExecutionResult.meta["telemetry"]`; Ollama native token counts (`prompt_eval_count`, `eval_count`) surfaced; content-safe projection to `metadata.jsonl`
+- **M5.3 Constellation Integrity Guard** — config-time validation detecting role-model collapse, missing role bindings, and call chain bound violations before execution begins; `CONSTELLATION_DRIFT` failure code; `--no-constellation-check` bypass flag
+
+Phase 5 is complete. Tag: `v0.5.0`.
+
+### Phase 6 - Memory Architecture *(Planned)*
+
+Phase 6 introduces governed, deterministic memory as a bounded input to context assembly. The execution stack remains frozen. No retrieval autonomy, no persistent session state, no dynamic routing.
+
+Planned capabilities:
+
+- governed memory store with atomic, scoped records
+- named memory pack system declared in runtime config
+- deterministic retrieval policy gated by route and capability allowlists
+- bounded memory injection into `ExecutionContext` via context assembly (requires M5.1)
+- user-confirmed write path — no runtime-initiated writes
+- content-safe memory logging (counts, keys, record sizes — no values)
+
+Governing document: `docs/architecture/DOC-ARCH-014-phase-6-guide.md`.
+
+### Phase 7 - Open-Source Initialisation Layer *(Planned)*
+
+Phase 7 makes the IO-III runtime self-initialising for external users. The goal: clone → configure → run, without modifying structural code.
+
+Planned capabilities:
+
+- initialisation contract defining the minimum required user configuration
+- `init` CLI command or documented setup procedure
+- neutral template files for persona, model config, and memory packs
+- portability validation pass confirming correct initialisation before first execution
+- clean separation of structural artefacts from user-configurable values
+
+Prerequisite: Phase 6 config separation must be complete before Phase 7 begins.
+
+Governing document: `docs/architecture/DOC-ARCH-015-phase-7-guide.md`.
 
 ---
