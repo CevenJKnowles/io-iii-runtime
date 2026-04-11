@@ -25,6 +25,7 @@ from io_iii.persona_contract import (
 
 from io_iii.core.capabilities import CapabilityContext, CapabilityRegistry
 from io_iii.core.content_safety import assert_no_forbidden_keys
+from io_iii.core.preflight import check_context_limit, _DEFAULT_CONTEXT_LIMIT_CHARS
 
 from io_iii.core.execution_trace import TraceRecorder
 from io_iii.core.engine_observability import EngineEventKind, EngineObservabilityLog
@@ -513,6 +514,18 @@ def run(
 
         # Keep historical suffix while ADR-010 provides the canonical system prompt.
         final_prompt = f"{assembled.system_prompt}\n\nUser:\n{assembled.user_prompt}\n\nIO-III:"
+
+        # M5.1: Token pre-flight estimator (ADR-021 §2).
+        # Runs after context assembly, before provider call.
+        # Limit sourced from runtime config; falls back to documented default.
+        _context_limit = int(
+            (getattr(cfg, "runtime", {}) or {}).get(
+                "context_limit_chars", _DEFAULT_CONTEXT_LIMIT_CHARS
+            )
+        )
+        if _context_limit > 0:
+            check_context_limit(final_prompt, limit_chars=_context_limit)
+
         _phase = "provider"
         with trace.step(
             "provider_inference",
