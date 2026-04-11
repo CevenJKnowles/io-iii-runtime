@@ -1,0 +1,43 @@
+# IO-III Memory Pack Configuration
+# ADR-022 §3 — Memory Pack System (Phase 6 M6.2)
+#
+# This file declares:
+#   storage_root  — configurable path to the local memory store directory.
+#                   Change this to your own path when deploying IO-III outside
+#                   the author's environment (Phase 7 portability requirement).
+#   packs         — named, versioned collections of memory record keys.
+#
+# Pack schema:
+#   id            — stable pack identifier (e.g. pack.<namespace>.<name>)
+#   version       — semantic version string
+#   description   — human-readable purpose; never logged as a value
+#   scope         — scope identifier for all records in the pack
+#   keys          — ordered list of memory record keys
+#   include_packs — optional list of other pack ids whose keys are prepended;
+#                   maximum nesting depth is 1; no recursive resolution
+
+schema: "io-iii-memory-packs"
+version: "v1.0"
+
+# Configurable storage root (Phase 7 portability: change this for your environment)
+storage_root: "./memory_store"
+
+packs:
+  # Starter pack — demonstrates the config format; no real records required
+  - id: pack.default.starter
+    version: "1.0"
+    description: "Empty starter pack demonstrating the pack config format"
+    scope: default
+    keys: []
+    include_packs: []
+
+  # Session resume pack — curated context for session continuation
+  - id: pack.io_iii.session_resume
+    version: "1.0"
+    description: "Curated context for session continuation"
+    scope: io_iii
+    keys:
+      - session.last_intent
+      - session.last_runbook_id
+      - session.active_governance_mode
+    include_packs: []
