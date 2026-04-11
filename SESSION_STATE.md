@@ -519,3 +519,37 @@ Phase 4 is complete. All milestones M4.0–M4.11 delivered.
 The frozen M4.7–M4.9 execution stack was not modified.
 Replay/resume is structurally isolated above it.
 Repository is in a taggable phase-close state (v0.4.0 candidate).
+
+---
+
+## Phase 5 Progress — M5.0 Complete
+
+**Status:** Active
+
+**Phase:** 5 — Runtime Observability and Optimisation
+
+**Current Milestone:** M5.0 complete — M5.1 next
+
+### M5 Completed
+
+- M5.0 Governance freeze and ADR authorship — ADR-021 accepted and indexed;
+  Phase 5 milestone suite formally defined; freeze boundary established above M4.11
+
+### M5 Pending
+
+- M5.1 Token Pre-flight Estimator — heuristic character-count estimator, `CONTEXT_LIMIT_EXCEEDED`
+  failure code, configurable `runtime.context_limit_chars` key; prerequisite for Phase 6 M6.4
+- M5.2 Execution Telemetry Metrics — `ExecutionMetrics` dataclass on `ExecutionResult.meta["telemetry"]`,
+  Ollama `prompt_eval_count`/`eval_count` surfaced, content-safe projection to `metadata.jsonl`
+- M5.3 Constellation Integrity Guard — config-time role-model collapse detection,
+  `CONSTELLATION_DRIFT` failure code, `--no-constellation-check` bypass flag
+
+### Phase 5 Contracts
+
+- ADR-021 — Runtime Observability and Optimisation Contract
+- DOC-ARCH-013 — Phase 5 Guide
+
+### Execution Stack Freeze Boundary
+
+All Phase 1–4 components are frozen for Phase 5.
+Observability capabilities operate alongside the execution stack, not inside it.
