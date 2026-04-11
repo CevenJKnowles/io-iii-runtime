@@ -99,6 +99,8 @@ def _extract_causal_code(exc: Exception) -> Optional[str]:
         "PROVIDER_",
         "OBSERVABILITY_",
         "CONTRACT_",
+        "CONTEXT_",
+        "CONSTELLATION_",
     )
 
     def _try_extract(candidate: str) -> Optional[str]:
