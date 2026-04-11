@@ -12,13 +12,13 @@
 
 ## Phase Status
 
-**Current Phase:** Phase 5 — Runtime Observability & Optimisation (complete) / Phase 6 — Memory Architecture (pending)
+**Current Phase:** Phase 6 — Memory Architecture (active)
 
-**Status:** Phase 5 complete (M5.0–M5.3 delivered; tagged v0.5.0). Phase 6 not yet started.
+**Status:** Phase 5 complete (M5.0–M5.3 delivered; tagged v0.5.0). Phase 6 active — M6.0 complete.
 
 **Tag:** v0.5.0
 
-**Branch:** phase-5-0
+**Branch:** phase-6-0
 
 ---
 
@@ -559,168 +559,165 @@ Phase 6 (Memory Architecture) is unblocked — M5.1 prerequisite satisfied.
 
 ---
 
-## Post-Phase 5 Hardening — 2026-04-12
+## Phase 6 — Memory Architecture (Active)
 
-Architectural optimality audit and gap closure performed against the v0.5.0 baseline.
-No new ADRs required. No invariants modified. No execution paths changed.
+**Governing ADR:** ADR-022 — Memory Architecture Contract (accepted)
 
----
+**Phase 6 Prerequisite:** M5.1 (token pre-flight estimator) confirmed complete.
 
-### H1 — Context Assembly unit test suite (ADR-010)
+### M6 Milestone Definitions
 
-File: `tests/test_context_assembly_adr010.py`
+#### M6.0 — Phase 6 ADR and Milestone Definition ✓
 
-ADR-010 (`context_assembly.py`, 221 lines) had zero direct unit tests. The module is
-foundational — it owns prompt hash stability, section ordering, and safe-key filtering.
-46 tests added covering: `_canonical_json`, `_compute_prompt_hash`, `_build_messages`,
-`_build_system_prompt`, `_format_boundaries_section`, `_build_assembly_metadata`,
-and `assemble_context` end-to-end.
+ADR-022 authored and accepted. Phase 6 milestones formally defined in SESSION_STATE.md.
+M5.1 prerequisite confirmed before M6.4 may begin.
 
-Key assertions:
-
-- same inputs → same `prompt_hash` across 5 iterations
-- section ordering is deterministic (persona < boundaries < envelope)
-- `_format_boundaries_section` excludes unsafe keys (prompt, completion, etc.)
-- `assembly_metadata` passes `assert_no_forbidden_keys`
+**Deliverable:** `ADR/ADR-022-memory-architecture-contract.md`
 
 ---
 
-### H2 — Routing fallback test suite (ADR-002)
+#### M6.1 — Memory Store Architecture
 
-File: `tests/test_routing_adr002.py`
+Define and implement the memory store: atomic, scoped, versioned records with
+deterministic key-based lookup. No search, no embedding, no ranking.
 
-ADR-002 routing fallback (primary → secondary → null) was exercised by only one
-determinism test. The critical failure paths were unexercised. 32 tests added covering:
-primary selection, primary-disabled fallback, unsupported-provider fallback,
-both-unavailable → null fallback, `_parse_target`, `_namespace_to_provider`,
-`_is_provider_enabled`, input validation, and determinism over 10 iterations.
+**Key contracts:**
 
----
+- `MemoryRecord` dataclass: `key`, `scope`, `value`, `version`, `provenance`,
+  `created_at`, `updated_at`, `sensitivity`
+- Storage root declared in config — no hardcoded path
+- Local file store under configurable `storage_root`
 
-### H3 — Engine revision path and challenger fail-open tests
-
-File: `tests/test_engine_revision_paths.py`
-
-The audit→`needs_work`→revision path (engine.py lines 593–623) and the challenger
-JSON-parse fail-open (engine.py lines 164–181) were untested. 18 tests added covering:
-
-- `needs_work` verdict → `provider.generate()` called twice, `revised=True` in audit_meta
-- `pass` verdict → generate called once, `revised=False`
-- `audit=False` → challenger never called, `audit_meta` is None
-- `_run_challenger` fail-open: invalid JSON → auto-pass dict returned
-- `_run_challenger` fail-open: provider unavailable (null route) → auto-pass dict returned
+**Module:** `io_iii/memory/store.py`
 
 ---
 
-### H4 — `_heuristic_input_tokens` precision rename
+#### M6.2 — Memory Pack System
 
-File: `io_iii/core/engine.py`
+Implement named memory bundles as the primary delivery mechanism for curated context.
 
-Variable `_heuristic_input_tokens` renamed to `_heuristic_char_count`. The estimator
-(`estimate_chars`) returns a character count, not a token count. The old name implied
-token-level precision that does not exist. Clarifying comment added at the call site.
+**Key contracts:**
 
----
+- `memory_packs.yaml` — pack definitions: `id`, `version`, `scope`, `keys`
+- Pack resolution deterministic from `id`
+- Max nesting depth: 1 (a pack may reference another pack's keys; no recursion)
+- Empty pack valid; resolves to empty subset
 
-### H5 — Engine helper extraction: `_do_challenger_pass` and `_do_revision`
+**Config:** `architecture/runtime/config/memory_packs.yaml`
 
-File: `io_iii/core/engine.py`
-
-The challenger audit block and revision inference block were extracted from `engine.run()`
-into two named helper functions:
-
-- `_do_challenger_pass(cfg, user_prompt, text, challenger_fn, trace, obs, rid, tsid, audit_passes)`
-  — records trace step, calls `challenger_fn`, emits `CHALLENGER_AUDIT_COMPLETE`, returns `audit_result`
-- `_do_revision(user_prompt, text, audit_result, provider, model, trace, obs, rid, tsid, revision_passes)`
-  — constructs revision prompt, records trace step, calls `provider.generate`, emits `REVISION_COMPLETE`, returns revised text
-
-Bound enforcement (`MAX_AUDIT_PASSES`, `MAX_REVISION_PASSES`) and `_phase` assignment
-remain in `run()` so the failure handler retains accurate phase context.
+**Module:** `io_iii/memory/packs.py`
 
 ---
 
-### H6 — `pyproject.toml` tooling and pytest configuration
+#### M6.3 — Memory Retrieval Policy
 
-File: `pyproject.toml`
+Define and enforce access rules controlling which routes and capabilities may retrieve
+which memory records.
 
-- Added `mypy>=1.8` and `ruff>=0.4` to `[project.optional-dependencies] dev`
-- Added `[tool.ruff]` configuration: `line-length = 100`, `target-version = "py311"`, lint selects E/F/W/I
-- Added `[tool.mypy]` configuration: `python_version = "3.11"`, `ignore_missing_imports = true`
-- Set `testpaths = ["tests", "io_iii/tests"]` — both test directories now explicit
-- Added `--tb=short --strict-markers` to pytest `addopts`
+**Key contracts:**
 
----
+- `memory_retrieval_policy.yaml` — `route_allowlist`, `capability_allowlist`,
+  `sensitivity_allowlist`
+- No record accessible by default
+- `standard` records: accessible to any allowlisted route
+- `elevated` / `restricted`: require explicit `sensitivity_allowlist` entry
+- Policy absence → injection skipped for all routes (not a failure)
 
-### Hardening Verification
+**Config:** `architecture/runtime/config/memory_retrieval_policy.yaml`
 
-Tests: **515 passing**
-
-Invariant validator: **4/4 PASS**
-
-Capability registry: **3 capabilities, all bounded**
+**Module:** `io_iii/memory/policy.py`
 
 ---
 
-## Roadmap Extension — 2026-04-12
+#### M6.4 — Memory Injection via Context Assembly
 
-A comparative analysis of IO-II planning conversations against the IO-III roadmap
-was performed. Gaps, divergences, and missing phases were identified and resolved.
-The following documents were updated.
+**Requires:** M5.1 active (confirmed).
 
-### Analysis Findings
+Inject a bounded memory subset into `ExecutionContext.memory` during context assembly.
+Extends `context_assembly.py` to append a `### Memory` section when
+`ExecutionContext.memory` is non-empty.
 
-Key divergences between IO-II's projected roadmap and IO-III's actual plan:
+**Key contracts:**
 
-- IO-II's "Phase 5: Structured Workflows" content landed in IO-III Phase 4 (runbooks);
-  IO-III Phase 5 was an observability insertion with no IO-II equivalent
-- IO-II's Phase 7 ("Agent Interaction Layer") was replaced by an open-source init layer;
-  the agent framing was explicitly rejected in favour of governed dialogue
-- IO-II's Phase 8 ("System Integration: API, UI") had no IO-III equivalent — now planned
-- Work Mode / Steward Mode was a "frozen design decision" with no implementation home
-- Task graph / conditional runbook branches were never formalised
-- No interface plan beyond the terminal existed
+- Pipeline: store → policy → selector → bounded subset (M5.1 budget) →
+  `ExecutionContext.memory` → context assembly → provider call
+- Injection after routing, before provider call
+- Records included in declaration order until budget exhausted; overflow dropped silently
+- Empty route config → injection skipped gracefully
+- Applies identically on first-run, replay, and resume
 
-### Documents Updated
+**New field:** `ExecutionContext.memory: list[MemoryRecord]`
 
-**DOC-ARCH-003** — Master roadmap extended with Phase 6–9 entries:
+---
 
-- Phase 6 (Pending): memory architecture summary + M6.7 cross-phase dependency noted
-- Phase 7 (Pending): init layer summary + M7.5 cross-phase dependency noted
-- Phase 8 (Planned): Governed Dialogue Layer — M8.0–M8.6 defined; TUI option noted on M8.3
-- Phase 9 (Planned): API & Integration Surface — M9.0–M9.5 defined; web UI at M9.5
-- Non-goals list corrected: items now phased (persistent memory, steward mode, API)
-  moved out of active non-goals
+#### M6.5 — Memory Safety Invariants
 
-**DOC-ARCH-014** (Phase 6 Guide) — M6.7 added: governed SessionState snapshot export;
-portable session artefact carrying workflow position and memory pack state;
-prerequisite for Phase 8 M8.3 (`session continue`).
+Enforce content-safe memory logging across all memory lifecycle events.
 
-**DOC-ARCH-015** (Phase 7 Guide) — two additions:
+**Allowed log fields:**
 
-- M7.3 extended: `chat_session.yaml` runbook template added to default pack templates
-- M7.5 added: Work Mode / Steward Mode ADR — governance contract prerequisite for
-  Phase 8 M8.1; `SessionMode` type, transition rules, steward threshold definition
+```text
+memory_keys_released
+memory_records_count
+memory_total_chars
+pack_id
+```
 
-**DOC-ARCH-002** (Structural Elevation Roadmap) — three corrections:
+**Never logged:** memory values, record content, free-text record fields.
 
-- Duplicate `updated:` frontmatter key removed
-- Phase 4 status updated from `(Active)` to `(Complete)`
-- Non-goals list corrected to match DOC-ARCH-003: phased items moved out
+**Deliverable:** Invariants added to `architecture/runtime/scripts/validate_invariants.py`
 
-### Interface Plan
+---
 
-Three interface tiers documented in DOC-ARCH-003:
+#### M6.6 — Memory Write Contract
 
-| Tier | Interface | Phase | Milestone |
-| --- | --- | --- | --- |
-| 1 | CLI | Phase 1 (always) | — |
-| 2 | TUI (rich terminal) | Phase 8 | M8.3 extension |
-| 3 | Web UI (self-hosted) | Phase 9 | M9.5 |
+Implement the user-confirmed write path for adding records to the memory store.
 
-Constraint recorded: all interfaces must route through the governed session layer;
-no execution bypass permitted from any surface.
+**Key contracts:**
 
-### No Code Changes
+- All writes require explicit user confirmation
+- Writes are atomic: single record, single operation
+- Write path is separate from execution path — no writes during a run
+- Successful write returns stable record identifier `<scope>/<key>`
+- Write failure raises `contract_violation` / `MEMORY_WRITE_FAILED`
+- No memory value logged on write
 
-This session made no code changes. All changes are documentation only.
-Tests remain at 515 passing. Invariants remain at 4/4 PASS.
+**CLI:** `python -m io_iii memory write --scope <scope> --key <key> --value <value>`
+
+---
+
+#### M6.7 — SessionState Snapshot Export
+
+Define and implement a governed export/import contract for a portable session artefact.
+
+**Key contracts:**
+
+- Export is user-initiated only; no automatic exports
+- Artefact fields: `schema_version`, `run_id`, `workflow_position`,
+  `active_memory_pack_ids`, `governance_mode`, `exported_at`
+- Artefact never contains memory values, model output, or prompt content
+- Import validates `schema_version` and all required fields; failure raises
+  `contract_violation` / `SNAPSHOT_SCHEMA_INVALID`
+- Default path: `<storage_root>/<run_id>.snapshot.json`
+
+**CLI:**
+
+```text
+python -m io_iii session export [--output <path>]
+python -m io_iii session import --snapshot <path>
+```
+
+**Cross-phase note:** Prerequisite for Phase 8 M8.3 (`session continue` command).
+
+---
+
+### Phase 6 Definition of Done
+
+- ADR-022 accepted and indexed ✓
+- M6.1–M6.7 milestones delivered and tested
+- Memory injection active and bounded by M5.1
+- Memory values absent from all log output (invariant validator confirms)
+- `pytest` passing
+- Invariant validator passing
+- SESSION_STATE.md updated with phase close state
+- Repository tagged `v0.6.0`
