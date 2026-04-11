@@ -101,6 +101,8 @@ def _extract_causal_code(exc: Exception) -> Optional[str]:
         "CONTRACT_",
         "CONTEXT_",
         "CONSTELLATION_",
+        "MEMORY_",      # ADR-022 §9: MEMORY_WRITE_FAILED
+        "SNAPSHOT_",    # ADR-022 §9: SNAPSHOT_SCHEMA_INVALID
     )
 
     def _try_extract(candidate: str) -> Optional[str]:

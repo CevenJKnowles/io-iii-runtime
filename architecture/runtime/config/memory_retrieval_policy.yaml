@@ -1,0 +1,34 @@
+# IO-III Memory Retrieval Policy
+# ADR-022 §4 — Memory Retrieval Policy (Phase 6 M6.3)
+#
+# Default stance: no memory record is accessible by default.
+# Access is opt-in and declared here.
+#
+# Fields:
+#   route_allowlist       — routes permitted to access any memory record
+#   capability_allowlist  — capabilities permitted to trigger memory access
+#   sensitivity_allowlist — maps sensitivity tier to the subset of allowed
+#                           routes that may also access elevated/restricted records.
+#                           Routes in route_allowlist but absent here may only
+#                           access 'standard' sensitivity records.
+#
+# Policy absence (empty file or missing file): injection skipped for all routes.
+
+schema: "io-iii-memory-retrieval-policy"
+version: "v1.0"
+
+route_allowlist:
+  - executor
+  - synthesizer
+
+capability_allowlist: []
+
+sensitivity_allowlist:
+  # Elevated records are accessible only to routes explicitly listed here.
+  # The route must also appear in route_allowlist above.
+  elevated:
+    - executor
+
+  # Restricted records are not accessible to any route by default.
+  # Add routes here only with explicit justification.
+  restricted: []
