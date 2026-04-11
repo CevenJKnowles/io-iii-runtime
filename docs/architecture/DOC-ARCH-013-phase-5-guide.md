@@ -2,8 +2,8 @@
 id: DOC-ARCH-013
 title: Phase 5 Guide | Runtime Observability & Optimisation
 type: architecture
-status: active
-version: v0.1
+status: complete
+version: v1.0
 canonical: true
 scope: phase-5
 audience: developer
