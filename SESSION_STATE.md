@@ -12,13 +12,13 @@
 
 ## Phase Status
 
-**Current Phase:** Phase 4 — Post-Capability Architecture Layer
+**Current Phase:** Phase 5 — Runtime Observability & Optimisation (complete) / Phase 6 — Memory Architecture (pending)
 
-**Status:** Phase 4 complete (M4.11 delivered; taggable)
+**Status:** Phase 5 complete (M5.0–M5.3 delivered; tagged v0.5.0). Phase 6 not yet started.
 
-**Tag:** v0.4.0 (candidate)
+**Tag:** v0.5.0
 
-**Branch:** phase-4-11
+**Branch:** phase-5-0
 
 ---
 
