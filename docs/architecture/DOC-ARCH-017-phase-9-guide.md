@@ -255,4 +255,4 @@ Phase 9 is complete when:
 - [x] `pytest` passing (1046 passing, 19 pre-existing failures)
 - [x] invariant validator passing
 - [x] SESSION_STATE.md updated with phase close state
-- [ ] repository tagged `v0.9.0`
+- [x] repository tagged `v0.9.0`
