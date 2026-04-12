@@ -43,6 +43,8 @@ The Python runtime intentionally demonstrates the architecture without expanding
 | 5 | Runtime Observability & Optimisation | **Complete** | `v0.5.0` |
 | 6 | Memory Architecture | **Complete** | `v0.6.0` |
 | *7* | *Open-Source Initialisation Layer* | *Planned* | — |
+| *8* | *Governed Dialogue Layer* | *Planned* | — |
+| *9* | *API & Integration Surface* | *Planned* | — |
 
 IO-III prioritises **determinism, governance discipline, and architectural clarity** over
 feature velocity.

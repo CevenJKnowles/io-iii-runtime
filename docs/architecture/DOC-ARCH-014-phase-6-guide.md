@@ -212,6 +212,33 @@ Define the user-confirmed write path for adding records to the memory store.
 
 ---
 
+### M6.7 — SessionState Snapshot Export
+
+Define a governed export/import contract for a portable session artefact.
+
+#### M6.7 Purpose
+
+- enable cross-machine session continuity without requiring a shared file system
+- produce a portable, self-describing snapshot that carries workflow position and
+  memory pack state
+- provide the portability primitive required by Phase 8 M8.3 (`session continue`)
+
+#### M6.7 Contract
+
+- export is user-initiated — no automatic or runtime-triggered exports
+- export artefact contains: `run_id`, `workflow_position` (last completed step index),
+  `active_memory_pack_ids`, `governance_mode`, `schema_version`
+- export artefact never contains memory values, model output, or prompt content
+- import validates `schema_version` and all required fields before restoring state
+- import failure raises `contract_violation` with a stable `SNAPSHOT_SCHEMA_INVALID` code
+- artefact is a single JSON file; path is user-specified or defaults to
+  `<root>/<run_id>.snapshot.json`
+
+**Cross-phase note:** This milestone is a prerequisite for Phase 8 M8.3 (session shell
+`continue` command). The session shell requires a portable session object to resume from.
+
+---
+
 ## Definition of Done
 
 Phase 6 is complete when:
