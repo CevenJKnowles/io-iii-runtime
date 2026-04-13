@@ -237,7 +237,7 @@ flowchart LR
         MEMPACKS["packs.py"]
         MEMPOL["policy.py"]
     end
-    subgraph Routing[""]
+    subgraph Routing
         ROUTING["routing.py"]
     end
     subgraph Providers["providers/"]
