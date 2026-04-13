@@ -53,7 +53,7 @@ from ._session_shell import (
     cmd_session_status,
     cmd_session_close,
 )
-from io_iii.api.server import cmd_serve
+
 
 __all__ = [
     "main",
