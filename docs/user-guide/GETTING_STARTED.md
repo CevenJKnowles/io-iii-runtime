@@ -158,6 +158,32 @@ Open the address in a browser. Requires `content_release: true` in `runtime.yaml
 
 ---
 
+## Docker
+
+If you prefer not to configure a local Python environment, Io³ runs as a container.
+Ollama still needs to be available — either running on your host or as a Docker sidecar.
+
+**Quick start (Ollama on host):**
+
+```bash
+git clone https://github.com/CevenJKnowles/io-architecture.git
+cd io-architecture
+docker compose up --build
+```
+
+Open `http://localhost:8080` in a browser.
+
+**Requires** `content_release: true` in `architecture/runtime/config/runtime.yaml`
+to display model responses in the web UI.
+
+Config is bind-mounted from `./architecture/runtime/config` — edit
+`routing_table.yaml` there (no rebuild needed) to match your available models.
+
+For the Ollama sidecar option, custom config volumes, and GPU notes, see
+[DOCKER.md](DOCKER.md).
+
+---
+
 ## Architecture validation
 
 Run these after any config change:
