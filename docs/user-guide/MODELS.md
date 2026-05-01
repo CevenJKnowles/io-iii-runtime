@@ -1,6 +1,7 @@
 <p align="center">
   <img src="../../assets/logo/io_iii_256.png" alt="I0³ logo" width="50%" />
 </p>
+
 # Model Configuration
 
 This document covers tested configurations by hardware tier, how the routing table works, and how to add a new model.

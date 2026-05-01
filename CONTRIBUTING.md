@@ -1,6 +1,7 @@
 <p align="center">
   <img src="assets/logo/io_iii_256.png" alt="I0³ logo" width="50%" />
 </p>
+
 # Contributing
 
 I0³ is a governance-first deterministic AI runtime. It is intentionally minimal and bounded. Contributions are welcome within those constraints.

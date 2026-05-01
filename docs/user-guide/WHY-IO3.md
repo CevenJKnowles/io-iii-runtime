@@ -1,6 +1,7 @@
 <p align="center">
   <img src="../../assets/logo/io_iii_256.png" alt="I0³ logo" width="50%" />
 </p>
+
 # Why I0³ exists
 
 ## The problem with calling a model directly
