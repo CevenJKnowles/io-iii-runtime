@@ -24,9 +24,10 @@ class OllamaProvider:
 
     @classmethod
     def from_config(cls, providers_cfg: Dict[str, Any]) -> "OllamaProvider":
-        # providers.yaml canonical key: ollama.base_url
-        cfg = (providers_cfg or {}).get("ollama", {}) if isinstance(providers_cfg, dict) else {}
-        host = cfg.get("base_url") or os.environ.get("OLLAMA_HOST") or "http://127.0.0.1:11434"
+        # providers.yaml structure: top-level key is "providers", ollama is nested inside it.
+        providers = (providers_cfg or {}).get("providers", {}) if isinstance(providers_cfg, dict) else {}
+        cfg = (providers or {}).get("ollama", {}) if isinstance(providers, dict) else {}
+        host = os.environ.get("OLLAMA_HOST") or cfg.get("base_url") or "http://127.0.0.1:11434"
         return cls(host=host)
 
     def check_reachable(self, *, timeout_ms: int = 1000) -> None:

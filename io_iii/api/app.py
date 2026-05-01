@@ -501,6 +501,27 @@ def api_health() -> JSONResponse:
 
 
 # ---------------------------------------------------------------------------
+# Routes: GET /greeting
+# ---------------------------------------------------------------------------
+
+@app.get("/greeting")
+def api_greeting() -> JSONResponse:
+    """
+    Return the persona greeting string from persona.yaml identity.greeting.
+
+    Returns {"greeting": <str>} when the field is present and non-empty,
+    or {"greeting": null} when absent — the UI shows nothing in that case.
+    """
+    try:
+        from io_iii.persona_contract import load_identity
+        identity = load_identity()
+        greeting = identity.get("greeting") or None
+    except Exception:
+        greeting = None
+    return JSONResponse(content={"greeting": greeting})
+
+
+# ---------------------------------------------------------------------------
 # Routes: POST /upload  — server-side file upload (ADR-029, M10.5)
 # ---------------------------------------------------------------------------
 

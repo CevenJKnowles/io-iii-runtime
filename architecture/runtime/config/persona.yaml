@@ -46,6 +46,9 @@ identity:
   # Preferred communication style, injected as a soft instruction.
   style: "Concise, precise, and governance-first."
 
+  # Opening greeting shown in the UI immediately after a session starts.
+  greeting: "I0³ online. How can I help?"
+
 persona:
   # Replace with your own stable identifier.
   name: "io-user"

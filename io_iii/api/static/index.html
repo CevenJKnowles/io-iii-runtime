@@ -370,13 +370,13 @@
     d.className = 'thinking';
     d.innerHTML =
       '<div class="thinking-dots"><span></span><span></span><span></span></div>' +
-      '<span class="thinking-label">Io is thinking\u2026</span>';
+      '<span class="thinking-label">Io is thinking…</span>';
     chat.appendChild(d);
     chat.scrollTop = chat.scrollHeight;
     // After 10 s without a response, signal "still working"
     const t = setTimeout(() => {
       const lbl = d.querySelector('.thinking-label');
-      if (lbl) { lbl.textContent = 'Still working\u2026'; lbl.classList.add('slow'); }
+      if (lbl) { lbl.textContent = 'Still working…'; lbl.classList.add('slow'); }
     }, 10000);
     d._slowTimer = t;
     return d;
@@ -433,8 +433,11 @@
       if (res.session_id) {
         sessionId = res.session_id;
         setPill(res.status || res.session_status || 'active');
-        bubble('Session started \u00b7 ' + mode + ' mode', 'system');
-        bubble('Hello! My name is Io. How can I help you today?', 'assistant');
+        bubble('Session started · ' + mode + ' mode', 'system');
+        try {
+          const gr = await fetch(BASE + '/greeting').then(r => r.json());
+          if (gr.greeting) bubble(gr.greeting, 'assistant');
+        } catch (_) {}
       } else {
         bubble('Failed to start: ' + (res.error_code || JSON.stringify(res)), 'error');
       }
@@ -618,234 +621,6 @@
 
     try {
       const r = await fetch(BASE + '/upload', { method: 'POST', body: formData });
-      const res = await r.json();
-      if (res.error) {
-        bubble('Upload failed: ' + res.error.message, 'error');
-        filePicker.value = '';
-        return;
-      }
-      attachedFileRef  = res.file_ref;
-      attachedFileName = res.filename;
-      fileChipName.textContent = res.filename + ' (' + res.chars.toLocaleString() + ' chars)';
-      fileChip.style.display = 'inline-flex';
-    } catch (e) {
-      bubble('Upload error: ' + e.message, 'error');
-      filePicker.value = '';
-    }
-  });
-
-  btnDismissFile.addEventListener('click', clearAttachment);
-
-  // ── init ──────────────────────────────────────────────────────────────────
-  setControls();
-})();
-</script>
-
-  // ── helpers ──────────────────────────────────────────────────────────────
-
-  function clearAttachment() {
-    attachedFileRef = null;
-    attachedFileName = null;
-    filePicker.value = '';
-    fileChip.style.display = 'none';
-    fileChipName.textContent = '';
-  }
-
-  function bubble(text, cls) {
-    const d = document.createElement('div');
-    d.className = 'bubble ' + cls;
-    d.textContent = text;
-    chat.appendChild(d);
-    chat.scrollTop = chat.scrollHeight;
-    return d;
-  }
-
-  function showThinking() {
-    const d = document.createElement('div');
-    d.className = 'thinking';
-    d.innerHTML =
-      '<div class="thinking-dots"><span></span><span></span><span></span></div>' +
-      '<span class="thinking-label">Io is thinking\u2026</span>';
-    chat.appendChild(d);
-    chat.scrollTop = chat.scrollHeight;
-    // After 10 s without a response, signal "still working"
-    const t = setTimeout(() => {
-      const lbl = d.querySelector('.thinking-label');
-      if (lbl) { lbl.textContent = 'Still working\u2026'; lbl.classList.add('slow'); }
-    }, 10000);
-    d._slowTimer = t;
-    return d;
-  }
-
-  function removeThinking(el) {
-    if (el._slowTimer) clearTimeout(el._slowTimer);
-    el.remove();
-  }
-
-  function setPill(status) {
-    sessionStatus = status;
-    pill.textContent = status || 'no session';
-    pill.className = '';
-    if (status) pill.classList.add(status.replace(/_/g, '-'));
-  }
-
-  function setControls() {
-    const has    = Boolean(sessionId);
-    const active = has && sessionStatus === 'active';
-    const paused = has && sessionStatus === 'paused';
-    btnStart.disabled    = has;
-    btnClose.disabled    = !has || sessionStatus === 'closed';
-    promptInput.disabled = !active || sending;
-    btnSend.disabled     = !active || sending;
-    pauseBanner.classList.toggle('visible', paused);
-    btnAttach.disabled   = !has || sending;
-    fileRow.classList.toggle('hidden', !has);
-  }
-
-  // ── API ───────────────────────────────────────────────────────────────────
-
-  async function post(path, body) {
-    const r = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    return r.json();
-  }
-
-  async function del(path) {
-    const r = await fetch(path, { method: 'DELETE' });
-    return r.json();
-  }
-
-  // ── session start ─────────────────────────────────────────────────────────
-
-  btnStart.addEventListener('click', async () => {
-    btnStart.disabled = true;
-    const mode = modeSelect.value;
-    try {
-      const res = await post('/session/start', { mode });
-      if (res.session_id) {
-        sessionId = res.session_id;
-        setPill(res.status || res.session_status || 'active');
-        bubble('Session started \u00b7 ' + mode + ' mode', 'system');
-        bubble('Hello! My name is Io. How can I help you today?', 'assistant');
-      } else {
-        bubble('Failed to start: ' + (res.error_code || JSON.stringify(res)), 'error');
-      }
-    } catch (e) {
-      bubble('Error: ' + e.message, 'error');
-    }
-    setControls();
-  });
-
-  // ── send turn ─────────────────────────────────────────────────────────────
-
-  async function sendTurn(prompt, action) {
-    if (sending) return;
-    sending = true;
-    setControls();
-
-    if (prompt) bubble(prompt, 'user');
-
-    const thinking = showThinking();
-
-    const body = { persona_mode: 'executor' };
-    if (prompt)          body.prompt    = prompt;
-    if (action)          body.action    = action;
-    if (attachedFileRef) body.file_ref  = attachedFileRef;
-
-    try {
-      const res = await post('/session/' + sessionId + '/turn', body);
-      removeThinking(thinking);
-
-      const newStatus = res.session_status || res.status;
-      setPill(newStatus);
-      clearAttachment();
-
-      if (res.error_code === 'FILE_REF_EXPIRED') {
-        bubble('File expired — server was restarted. Please re-upload the file.', 'error');
-        clearAttachment();
-      } else if (res.error_code) {
-        bubble('Error: ' + res.error_code, 'error');
-      } else if (res.response) {
-        bubble(res.response, 'assistant');
-      }
-      // No response field = content_release disabled; show nothing.
-
-    } catch (e) {
-      removeThinking(thinking);
-      bubble('Error: ' + e.message, 'error');
-    }
-
-    sending = false;
-    setControls();
-  }
-
-  btnSend.addEventListener('click', () => {
-    const text = promptInput.value.trim();
-    if (!text) return;
-    promptInput.value = '';
-    sendTurn(text, null);
-  });
-
-  promptInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); btnSend.click(); }
-  });
-
-  promptInput.addEventListener('input', () => {
-    promptInput.style.height = 'auto';
-    promptInput.style.height = Math.min(promptInput.scrollHeight, 120) + 'px';
-  });
-
-  // ── close session ─────────────────────────────────────────────────────────
-
-  async function closeSession() {
-    if (!sessionId) return;
-    try {
-      const res = await del('/session/' + sessionId);
-      setPill(res.status || 'closed');
-      bubble('Session closed.', 'system');
-    } catch (e) {
-      bubble('Close error: ' + e.message, 'error');
-    }
-    sessionId = null;
-    setControls();
-  }
-
-  btnClose.addEventListener('click', closeSession);
-
-  // ── steward pause ─────────────────────────────────────────────────────────
-
-  btnApprove.addEventListener('click', () => sendTurn(null, 'approve'));
-  btnRedirect.addEventListener('click', () => {
-    const p = promptInput.value.trim() || 'redirect';
-    promptInput.value = '';
-    sendTurn(p, 'redirect');
-  });
-  btnClosePause.addEventListener('click', closeSession);
-
-  // ── file attachment ───────────────────────────────────────────────────────
-
-  btnAttach.addEventListener('click', () => filePicker.click());
-
-  filePicker.addEventListener('change', async () => {
-    const f = filePicker.files[0];
-    if (!f || !sessionId) return;
-
-    const MAX = 2 * 1024 * 1024;
-    if (f.size > MAX) {
-      bubble('File too large (2 MB limit).', 'error');
-      filePicker.value = '';
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', f);
-    formData.append('session_id', sessionId);
-
-    try {
-      const r = await fetch('/upload', { method: 'POST', body: formData });
       const res = await r.json();
       if (res.error) {
         bubble('Upload failed: ' + res.error.message, 'error');

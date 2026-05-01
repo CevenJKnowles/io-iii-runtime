@@ -335,11 +335,21 @@ def cmd_session_continue(args) -> int:
         return 1
     except ValueError as e:
         code = str(e).split(":")[0]
-        print(str(e), file=sys.stderr)
+        _print({
+            "session_id": session.session_id,
+            "status": "error",
+            "error_code": code,
+            "session_status": session.status,
+        })
         save_session(session, storage_root)
         return 1
     except Exception as e:
-        print(f"SESSION_TURN_FAILED: {type(e).__name__}", file=sys.stderr)
+        _print({
+            "session_id": session.session_id,
+            "status": "error",
+            "error_code": type(e).__name__,
+            "session_status": session.status,
+        })
         save_session(session, storage_root)
         return 1
 
