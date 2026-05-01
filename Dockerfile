@@ -23,14 +23,16 @@ LABEL org.opencontainers.image.source="https://github.com/CevenJKnowles/io-archi
 
 WORKDIR /app
 
-# Copy entire repo into the image.
-# architecture/runtime/config/ is included and serves as the built-in default
-# config. Operators override this via the /app/config volume mount.
-COPY . /app
+COPY pyproject.toml /app/pyproject.toml
 
 # Install runtime dependencies only (no dev extras).
 # PyYAML, fastapi, and uvicorn all ship binary wheels for python:3.12-slim.
 RUN pip install --no-cache-dir -e .
+
+# Copy entire repo into the image.
+# architecture/runtime/config/ is included and serves as the built-in default
+# config. Operators override this via the /app/config volume mount.
+COPY . /app
 
 # Seed /app/config from the built-in config directory.
 # This means the container works out of the box without a bind mount.
