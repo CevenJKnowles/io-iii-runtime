@@ -452,7 +452,7 @@ async def api_session_stream(session_id: str) -> StreamingResponse:
         # Emit current session state on connect.
         try:
             state_args = Namespace(session_id=session_id, config_dir=None)
-            _, state_result = _invoke(_cli().cmd_session_status, state_args)
+            _, state_result = await asyncio.to_thread(_invoke, _cli().cmd_session_status, state_args)
             state_result = _strip_content(state_result)
             yield _sse("session_state", state_result)
         except Exception:
