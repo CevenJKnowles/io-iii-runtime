@@ -3,14 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IO-III Runtime</title>
+  <title>I0³ Runtime</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* ── Brand tokens ────────────────────────────────────────────────────── */
+    :root {
+      --bg:          #010f1d;
+      --surface:     #080f1d;
+      --surface2:    #0d1829;
+      --border:      #1a2a3a;
+      --border-dim:  #52779C;   /* decorative only — not small text */
+      --primary:     #ff6700;
+      --cyan:        #00F1FF;
+      --teal:        #39A4AA;
+      --text:        #efefef;
+      --text-mid:    #a5a9b4;
+      --err-bg:      #2a0808;
+      --err-brd:     #cc2200;
+      --err-txt:     #ff6b6b;
+      --warn-bg:     #1a1000;
+      --warn-brd:    #a07010;
+      --warn-txt:    #d29922;
+    }
+
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #0d1117;
-      color: #c9d1d9;
+      background: var(--bg);
+      color: var(--text);
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -18,8 +38,8 @@
 
     header {
       padding: 10px 20px;
-      background: #161b22;
-      border-bottom: 1px solid #30363d;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       gap: 12px;
@@ -27,7 +47,7 @@
 
     header h1 {
       font-size: 0.9rem;
-      color: #58a6ff;
+      color: var(--primary);
       letter-spacing: 0.04em;
       font-family: 'Courier New', monospace;
     }
@@ -36,15 +56,15 @@
       font-size: 0.72rem;
       padding: 2px 10px;
       border-radius: 12px;
-      background: #21262d;
-      border: 1px solid #30363d;
-      color: #8b949e;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-mid);
       font-family: 'Courier New', monospace;
     }
-    #status-pill.active   { background: #0f2a1a; border-color: #3fb950; color: #3fb950; }
-    #status-pill.paused   { background: #2a1a0f; border-color: #d29922; color: #d29922; }
-    #status-pill.closed   { background: #21262d; border-color: #6e7681; color: #6e7681; }
-    #status-pill.at_limit { background: #21262d; border-color: #6e7681; color: #6e7681; }
+    #status-pill.active   { background: #001a1f; border-color: var(--cyan);     color: var(--cyan); }
+    #status-pill.paused   { background: var(--warn-bg); border-color: var(--warn-brd); color: var(--warn-txt); }
+    #status-pill.closed   { background: var(--surface2); border-color: var(--border-dim); color: var(--text-mid); }
+    #status-pill.at_limit { background: var(--surface2); border-color: var(--border-dim); color: var(--text-mid); }
 
     #header-actions {
       margin-left: auto;
@@ -53,31 +73,28 @@
       align-items: center;
     }
 
-    select, button {
-      font-family: inherit;
-      font-size: 0.8rem;
-    }
+    select, button { font-family: inherit; font-size: 0.8rem; }
 
     #mode-select {
-      background: #21262d;
-      border: 1px solid #30363d;
-      color: #c9d1d9;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
       border-radius: 6px;
       padding: 4px 8px;
     }
 
     .btn {
       padding: 4px 14px;
-      border: 1px solid #30363d;
+      border: 1px solid var(--border);
       border-radius: 6px;
-      background: #21262d;
-      color: #c9d1d9;
+      background: var(--surface2);
+      color: var(--text);
       cursor: pointer;
     }
-    .btn:hover { background: #30363d; }
+    .btn:hover { border-color: var(--border-dim); background: #0f1f30; }
     .btn:disabled { opacity: 0.35; cursor: not-allowed; }
-    .btn-danger { border-color: #da3633; color: #f85149; }
-    .btn-danger:hover { background: #3d1717; }
+    .btn-danger { border-color: var(--err-brd); color: var(--err-txt); }
+    .btn-danger:hover { background: var(--err-bg); }
 
     #chat {
       flex: 1;
@@ -98,25 +115,28 @@
       word-break: break-word;
     }
 
+    /* User bubble: orange bg, dark text — 6.6:1 ✓ AA */
     .bubble.user {
       align-self: flex-end;
-      background: #1f6feb;
-      color: #fff;
+      background: var(--primary);
+      color: #010f1d;
       border-bottom-right-radius: 4px;
+      font-weight: 500;
     }
 
+    /* Assistant bubble: dark surface, light text — 15.5:1 ✓ AAA */
     .bubble.assistant {
       align-self: flex-start;
-      background: #1c2128;
-      border: 1px solid #30363d;
-      color: #c9d1d9;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
       border-bottom-left-radius: 4px;
     }
 
     .bubble.system {
       align-self: center;
       background: transparent;
-      color: #6e7681;
+      color: var(--text-mid);
       font-size: 0.75rem;
       text-align: center;
       max-width: 90%;
@@ -124,45 +144,60 @@
 
     .bubble.error {
       align-self: flex-start;
-      background: #3d1717;
-      border: 1px solid #da3633;
-      color: #f85149;
+      background: var(--err-bg);
+      border: 1px solid var(--err-brd);
+      color: var(--err-txt);
       font-size: 0.82rem;
     }
 
+    /* ── Thinking indicator ───────────────────────────────────────────────── */
     .thinking {
       align-self: flex-start;
       display: flex;
-      gap: 5px;
+      align-items: center;
+      gap: 10px;
       padding: 10px 14px;
     }
-    .thinking span {
-      width: 8px; height: 8px;
+    .thinking-dots {
+      display: flex;
+      gap: 5px;
+    }
+    .thinking-dots span {
+      width: 7px; height: 7px;
       border-radius: 50%;
-      background: #58a6ff;
+      background: var(--cyan);
       animation: pulse 1.2s infinite ease-in-out;
     }
-    .thinking span:nth-child(2) { animation-delay: 0.2s; }
-    .thinking span:nth-child(3) { animation-delay: 0.4s; }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
     @keyframes pulse {
       0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
-      40% { opacity: 1; transform: scale(1); }
+      40%           { opacity: 1;   transform: scale(1); }
     }
+    .thinking-label {
+      font-size: 0.78rem;
+      color: var(--text-mid);
+      font-style: italic;
+      transition: color 0.4s;
+    }
+    .thinking-label.slow { color: var(--teal); }
 
+    /* ── Pause banner ────────────────────────────────────────────────────── */
     #pause-banner {
       display: none;
       padding: 10px 20px;
-      background: #2a1a0f;
-      border-top: 1px solid #d29922;
-      color: #d29922;
+      background: var(--warn-bg);
+      border-top: 1px solid var(--warn-brd);
+      color: var(--warn-txt);
       font-size: 0.8rem;
       gap: 10px;
       align-items: center;
     }
     #pause-banner.visible { display: flex; }
-    #pause-banner .btn { border-color: #d29922; color: #d29922; font-size: 0.75rem; }
-    #pause-banner .btn:hover { background: #3b2608; }
+    #pause-banner .btn { border-color: var(--warn-brd); color: var(--warn-txt); font-size: 0.75rem; }
+    #pause-banner .btn:hover { background: #2a1800; }
 
+    /* ── File attachment ─────────────────────────────────────────────────── */
     #file-row {
       display: flex;
       align-items: center;
@@ -177,36 +212,32 @@
       gap: 6px;
       font-size: 0.75rem;
       font-family: 'Courier New', monospace;
-      background: #21262d;
-      border: 1px solid #30363d;
+      background: var(--surface2);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 2px 10px;
-      color: #8b949e;
+      color: var(--text-mid);
     }
-    #file-chip .dismiss {
-      cursor: pointer;
-      color: #6e7681;
-      font-size: 0.9rem;
-      line-height: 1;
-    }
-    #file-chip .dismiss:hover { color: #f85149; }
+    #file-chip .dismiss { cursor: pointer; color: var(--text-mid); font-size: 0.9rem; line-height: 1; }
+    #file-chip .dismiss:hover { color: var(--err-txt); }
 
     .btn-attach {
       padding: 4px 10px;
       font-size: 0.8rem;
-      border: 1px solid #30363d;
+      border: 1px solid var(--border);
       border-radius: 6px;
-      background: #21262d;
-      color: #8b949e;
+      background: var(--surface2);
+      color: var(--text-mid);
       cursor: pointer;
     }
-    .btn-attach:hover { background: #30363d; color: #c9d1d9; }
+    .btn-attach:hover { border-color: var(--border-dim); color: var(--text); }
     .btn-attach:disabled { opacity: 0.35; cursor: not-allowed; }
 
+    /* ── Input area ──────────────────────────────────────────────────────── */
     #input-area {
       padding: 12px 20px;
-      background: #161b22;
-      border-top: 1px solid #30363d;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
       display: flex;
       gap: 8px;
     }
@@ -214,10 +245,10 @@
     #prompt-input {
       flex: 1;
       padding: 9px 14px;
-      background: #0d1117;
-      border: 1px solid #30363d;
+      background: var(--bg);
+      border: 1px solid var(--border);
       border-radius: 20px;
-      color: #c9d1d9;
+      color: var(--text);
       font-family: inherit;
       font-size: 0.88rem;
       resize: none;
@@ -225,27 +256,30 @@
       max-height: 120px;
       outline: none;
     }
-    #prompt-input:focus { border-color: #388bfd; }
+    #prompt-input::placeholder { color: var(--text-mid); }
+    #prompt-input:focus { border-color: var(--primary); }
 
+    /* Send button: orange bg, dark text — 6.6:1 ✓ AA */
     #btn-send {
       padding: 8px 20px;
-      background: #1f6feb;
+      background: var(--primary);
       border: none;
       border-radius: 20px;
-      color: #fff;
+      color: #010f1d;
       font-family: inherit;
       font-size: 0.88rem;
+      font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
     }
-    #btn-send:hover { background: #388bfd; }
+    #btn-send:hover { background: #ff8533; }
     #btn-send:disabled { opacity: 0.35; cursor: not-allowed; }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>&#9632; IO-III Runtime</h1>
+  <h1>&#9632; I0³ Runtime</h1>
   <span id="status-pill">no session</span>
   <div id="header-actions">
     <select id="mode-select" title="Session mode">
@@ -277,7 +311,7 @@
   </span>
 </div>
 <div id="input-area">
-  <textarea id="prompt-input" placeholder="Message IO-III… (Enter to send)" disabled rows="1"></textarea>
+  <textarea id="prompt-input" placeholder="Message I0³… (Enter to send)" disabled rows="1"></textarea>
   <button id="btn-send" disabled>Send</button>
 </div>
 
@@ -291,23 +325,23 @@
   let attachedFileRef = null;
   let attachedFileName = null;
 
-  const chat        = document.getElementById('chat');
-  const pill        = document.getElementById('status-pill');
-  const modeSelect  = document.getElementById('mode-select');
-  const btnStart    = document.getElementById('btn-start');
-  const btnClose    = document.getElementById('btn-close');
-  const promptInput = document.getElementById('prompt-input');
-  const btnSend     = document.getElementById('btn-send');
-  const pauseBanner = document.getElementById('pause-banner');
-  const btnApprove  = document.getElementById('btn-approve');
-  const btnRedirect = document.getElementById('btn-redirect');
-  const btnClosePause = document.getElementById('btn-close-pause');
-  const filePicker      = document.getElementById('file-picker');
-  const btnAttach       = document.getElementById('btn-attach');
-  const fileRow         = document.getElementById('file-row');
-  const fileChip        = document.getElementById('file-chip');
-  const fileChipName    = document.getElementById('file-chip-name');
-  const btnDismissFile  = document.getElementById('btn-dismiss-file');
+  const chat           = document.getElementById('chat');
+  const pill           = document.getElementById('status-pill');
+  const modeSelect     = document.getElementById('mode-select');
+  const btnStart       = document.getElementById('btn-start');
+  const btnClose       = document.getElementById('btn-close');
+  const promptInput    = document.getElementById('prompt-input');
+  const btnSend        = document.getElementById('btn-send');
+  const pauseBanner    = document.getElementById('pause-banner');
+  const btnApprove     = document.getElementById('btn-approve');
+  const btnRedirect    = document.getElementById('btn-redirect');
+  const btnClosePause  = document.getElementById('btn-close-pause');
+  const filePicker     = document.getElementById('file-picker');
+  const btnAttach      = document.getElementById('btn-attach');
+  const fileRow        = document.getElementById('file-row');
+  const fileChip       = document.getElementById('file-chip');
+  const fileChipName   = document.getElementById('file-chip-name');
+  const btnDismissFile = document.getElementById('btn-dismiss-file');
 
   // ── helpers ──────────────────────────────────────────────────────────────
 
@@ -331,10 +365,23 @@
   function showThinking() {
     const d = document.createElement('div');
     d.className = 'thinking';
-    d.innerHTML = '<span></span><span></span><span></span>';
+    d.innerHTML =
+      '<div class="thinking-dots"><span></span><span></span><span></span></div>' +
+      '<span class="thinking-label">Io is thinking\u2026</span>';
     chat.appendChild(d);
     chat.scrollTop = chat.scrollHeight;
+    // After 10 s without a response, signal "still working"
+    const t = setTimeout(() => {
+      const lbl = d.querySelector('.thinking-label');
+      if (lbl) { lbl.textContent = 'Still working\u2026'; lbl.classList.add('slow'); }
+    }, 10000);
+    d._slowTimer = t;
     return d;
+  }
+
+  function removeThinking(el) {
+    if (el._slowTimer) clearTimeout(el._slowTimer);
+    el.remove();
   }
 
   function setPill(status) {
@@ -345,15 +392,15 @@
   }
 
   function setControls() {
-    const has = Boolean(sessionId);
+    const has    = Boolean(sessionId);
     const active = has && sessionStatus === 'active';
     const paused = has && sessionStatus === 'paused';
-    btnStart.disabled        = has;
-    btnClose.disabled        = !has || sessionStatus === 'closed';
-    promptInput.disabled     = !active || sending;
-    btnSend.disabled         = !active || sending;
+    btnStart.disabled    = has;
+    btnClose.disabled    = !has || sessionStatus === 'closed';
+    promptInput.disabled = !active || sending;
+    btnSend.disabled     = !active || sending;
     pauseBanner.classList.toggle('visible', paused);
-    btnAttach.disabled = !has || sending;
+    btnAttach.disabled   = !has || sending;
     fileRow.classList.toggle('hidden', !has);
   }
 
@@ -383,7 +430,8 @@
       if (res.session_id) {
         sessionId = res.session_id;
         setPill(res.status || res.session_status || 'active');
-        bubble('Session started · ' + mode + ' mode', 'system');
+        bubble('Session started \u00b7 ' + mode + ' mode', 'system');
+        bubble('Hello! My name is Io. How can I help you today?', 'assistant');
       } else {
         bubble('Failed to start: ' + (res.error_code || JSON.stringify(res)), 'error');
       }
@@ -405,17 +453,16 @@
     const thinking = showThinking();
 
     const body = { persona_mode: 'executor' };
-    if (prompt) body.prompt = prompt;
-    if (action) body.action = action;
-    if (attachedFileRef) body.file_ref = attachedFileRef;
+    if (prompt)          body.prompt    = prompt;
+    if (action)          body.action    = action;
+    if (attachedFileRef) body.file_ref  = attachedFileRef;
 
     try {
       const res = await post('/session/' + sessionId + '/turn', body);
-      thinking.remove();
+      removeThinking(thinking);
 
       const newStatus = res.session_status || res.status;
       setPill(newStatus);
-
       clearAttachment();
 
       if (res.error_code === 'FILE_REF_EXPIRED') {
@@ -429,7 +476,7 @@
       // No response field = content_release disabled; show nothing.
 
     } catch (e) {
-      thinking.remove();
+      removeThinking(thinking);
       bubble('Error: ' + e.message, 'error');
     }
 
@@ -445,13 +492,9 @@
   });
 
   promptInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      btnSend.click();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); btnSend.click(); }
   });
 
-  // auto-grow textarea
   promptInput.addEventListener('input', () => {
     promptInput.style.height = 'auto';
     promptInput.style.height = Math.min(promptInput.scrollHeight, 120) + 'px';
@@ -511,7 +554,7 @@
         filePicker.value = '';
         return;
       }
-      attachedFileRef = res.file_ref;
+      attachedFileRef  = res.file_ref;
       attachedFileName = res.filename;
       fileChipName.textContent = res.filename + ' (' + res.chars.toLocaleString() + ' chars)';
       fileChip.style.display = 'inline-flex';
