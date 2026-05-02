@@ -58,6 +58,8 @@ class OllamaProvider:
         """
         url = f"{self.host}/api/generate"
 
+        if not model.endswith("-think"):
+            prompt = f"/no_think\n{prompt}"
         # Keep implementation minimal and deterministic (no streaming).
         payload: Dict[str, Any] = {"model": model, "prompt": prompt, "stream": False}
 
@@ -117,6 +119,8 @@ class OllamaProvider:
         """
         url = f"{self.host}/api/generate"
 
+        if not model.endswith("-think"):
+            prompt = f"/no_think\n{prompt}"
         payload: Dict[str, Any] = {"model": model, "prompt": prompt, "stream": False}
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(

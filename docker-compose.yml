@@ -40,6 +40,7 @@ services:
       # If using the Ollama sidecar instead, change this to:
       #   OLLAMA_HOST: http://ollama:11434
       OLLAMA_HOST: http://host-gateway:11434
+      OLLAMA_KEEP_ALIVE: 30m
 
     # Makes `host-gateway` resolve to the Docker host IP on Linux.
     # Required for OLLAMA_HOST to reach a host-side Ollama instance.

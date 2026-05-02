@@ -65,44 +65,44 @@ routing_table:
       name: "qwen3.5:9b-think"
     draft:
       provider: ollama
-      name: "qwen3.5:9b-nothink"
+      name: "qwen3.5:4b"
     fast:
       provider: ollama
       name: "qwen3.5:4b"
 
   modes:
     executor:
-      primary: "local:qwen3.5:9b-nothink"
-      secondary: "local:qwen3.5:4b"
+      primary: "local:mistral:latest"
+      secondary: "local:mistral:latest"
 
     explorer:
       primary: "local:qwen3.5:9b-think"
-      secondary: "local:qwen3.5:9b-nothink"
+      secondary: "local:qwen3.5:4b"
 
     challenger:
       primary: "local:qwen3.5:9b-think"
-      secondary: "local:qwen3.5:9b-think"
+      secondary: "local:qwen3.5:4b"
 
     synthesizer:
-      primary: "local:qwen3.5:9b-nothink"
-      secondary: "local:qwen3.5:4b"
+      primary: "local:mistral:latest"
+      secondary: "local:mistral:latest"
 
     visionary:
       primary: "local:qwen3.5:9b-think"
-      secondary: "local:qwen3.5:9b-nothink"
+      secondary: "local:qwen3.5:4b"
 
     fast:
-      primary: "local:qwen3.5:4b"
-      secondary: "local:qwen3.5:4b"
+      primary: "local:mistral:latest"
+      secondary: "local:mistral:latest"
 
     draft:
-      primary: "local:qwen3.5:9b-nothink"
-      secondary: "local:qwen3.5:4b"
+      primary: "local:mistral:latest"
+      secondary: "local:mistral:latest"
 
     data:
-      primary: "local:qwen3.5:4b"
-      secondary: "local:qwen3.5:4b"
+      primary: "local:mistral:latest"
+      secondary: "local:mistral:latest"
 
     steward:
-      primary: "local:qwen3.5:4b"
-      secondary: "local:qwen3.5:4b"
+      primary: "local:mistral:latest"
+      secondary: "local:mistral:latest"
