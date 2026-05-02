@@ -84,6 +84,18 @@
       padding: 4px 8px;
     }
 
+    #audit-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    #audit-label input { accent-color: var(--accent); cursor: pointer; }
+
     .btn {
       padding: 4px 14px;
       border: 1px solid var(--border);
@@ -287,6 +299,10 @@
       <option value="work">work</option>
       <option value="steward">steward</option>
     </select>
+    <label id="audit-label" title="Run the challenger audit gate on every turn. Adds latency but catches weak or misaligned responses before they reach you.">
+      <input type="checkbox" id="audit-toggle" />
+      Audit
+    </label>
     <button id="btn-start" class="btn">Start session</button>
     <button id="btn-close" class="btn btn-danger" disabled>Close session</button>
   </div>
@@ -332,6 +348,7 @@
   const chat           = document.getElementById('chat');
   const pill           = document.getElementById('status-pill');
   const modeSelect     = document.getElementById('mode-select');
+  const auditToggle    = document.getElementById('audit-toggle');
   const btnStart       = document.getElementById('btn-start');
   const btnClose       = document.getElementById('btn-close');
   const promptInput    = document.getElementById('prompt-input');
@@ -452,7 +469,7 @@
   // ── send turn (SSE stream for normal prompts; POST for actions / file turns)
 
   async function sendTurnPost(prompt, action) {
-    const body = { persona_mode: 'executor' };
+    const body = { persona_mode: 'executor', audit: auditToggle.checked };
     if (prompt)          body.prompt   = prompt;
     if (action)          body.action   = action;
     if (attachedFileRef) body.file_ref = attachedFileRef;
@@ -495,7 +512,7 @@
     // This prevents a race where a fast turn publishes turn_completed before
     // the EventSource is listening.
     es.onopen = function () {
-      post('/session/' + sessionId + '/turn', { prompt: prompt, persona_mode: 'executor' })
+      post('/session/' + sessionId + '/turn', { prompt: prompt, persona_mode: 'executor', audit: auditToggle.checked })
         .then(function (res) {
           clearTimeout(watchdog);
           if (!outputHandled) {

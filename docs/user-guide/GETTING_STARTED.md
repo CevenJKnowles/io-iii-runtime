@@ -160,6 +160,14 @@ python -m io_iii serve --host 0.0.0.0 --port 9000
 
 Open the address in a browser. Requires `content_release: true` in `runtime.yaml` to display model responses.
 
+The web UI exposes the following controls in the header:
+
+**Mode selector** — chooses the session mode (`work` or `steward`). Set before starting a session; has no effect during an active session.
+
+**Audit toggle** — when checked, every turn runs the challenger gate on the draft before the response is shown to you. The challenger (`deepseek-r1` by default) reviews the executor's draft and, if it finds the response weak or misaligned, prompts the executor to revise. Default: off. Enable it when response quality matters more than speed — for example, when drafting client-facing content or reasoning through a complex problem. Expect noticeably higher latency per turn when audit is on, since two or three model calls may run instead of one.
+
+**Attach file** — appears after a session starts. Accepts `.txt`, `.md`, `.csv`, `.json`, `.yaml`, `.py`, `.pdf`, and `.docx`. The server extracts the text and prepends it to your next prompt. The file is held session-scoped and discarded when the session closes.
+
 ---
 
 ## Docker
