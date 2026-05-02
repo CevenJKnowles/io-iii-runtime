@@ -476,12 +476,28 @@
     const es = new EventSource(BASE + '/session/' + sessionId + '/stream');
     let outputHandled = false;
 
+    // Watchdog: if neither the POST response nor turn_completed arrives within
+    // 60 s, surface a user-facing message and recover the UI.  RAM-offloaded
+    // models can stall under memory pressure; without this the UI hangs
+    // indefinitely with no feedback.
+    const watchdog = setTimeout(function () {
+      if (!outputHandled) {
+        outputHandled = true;
+        removeThinking(window._thinking);
+        bubble('No response received after 60 seconds. The model may be under load — please try again.', 'error');
+        es.close();
+        sending = false;
+        setControls();
+      }
+    }, 60000);
+
     // Wait for the stream to open before POSTing the turn.
     // This prevents a race where a fast turn publishes turn_completed before
     // the EventSource is listening.
     es.onopen = function () {
       post('/session/' + sessionId + '/turn', { prompt: prompt, persona_mode: 'executor' })
         .then(function (res) {
+          clearTimeout(watchdog);
           if (!outputHandled) {
             outputHandled = true;
             removeThinking(window._thinking);
@@ -492,9 +508,16 @@
             bubble('Error: ' + res.error_code, 'error');
           } else if (res.response) {
             bubble(res.response, 'assistant');
+          } else {
+            // The POST resolved but carried no response and no error code.
+            // This happens when content_release config fails to load at
+            // request time, or when the engine returns an empty message.
+            // Surface a recoverable message rather than silently doing nothing.
+            bubble('No response received — please try again.', 'error');
           }
         })
         .catch(function (e) {
+          clearTimeout(watchdog);
           if (!outputHandled) {
             outputHandled = true;
             removeThinking(window._thinking);
@@ -522,7 +545,11 @@
     });
 
     es.addEventListener('turn_completed', function (e) {
+      clearTimeout(watchdog);
+      // Always mark outputHandled so a late-arriving POST .then() does not
+      // attempt a second removeThinking call or render a stale response.
       if (!outputHandled) removeThinking(window._thinking);
+      outputHandled = true;
       try {
         const data = JSON.parse(e.data);
         setPill(data.session_status || 'active');
@@ -533,7 +560,9 @@
     });
 
     es.addEventListener('steward_gate_triggered', function (e) {
+      clearTimeout(watchdog);
       if (!outputHandled) removeThinking(window._thinking);
+      outputHandled = true;
       try {
         const data = JSON.parse(e.data);
         setPill(data.session_status || 'paused');
@@ -544,7 +573,9 @@
     });
 
     es.addEventListener('turn_error', function (e) {
+      clearTimeout(watchdog);
       if (!outputHandled) removeThinking(window._thinking);
+      outputHandled = true;
       try {
         const data = JSON.parse(e.data);
         bubble('Error: ' + (data.error_code || 'unknown'), 'error');
@@ -555,7 +586,9 @@
     });
 
     es.onerror = function () {
+      clearTimeout(watchdog);
       if (!outputHandled) removeThinking(window._thinking);
+      outputHandled = true;
       bubble('Stream connection lost.', 'error');
       es.close();
       sending = false;
