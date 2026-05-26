@@ -2,13 +2,13 @@
 id: "ADR-001"
 title: "LLM Runtime Control Plane Selection"
 type: "adr"
-status: "active"
-version: "v1.0"
+status: "ammended"
+version: "v1.1"
 canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-01-09"
-updated: "2026-01-09"
+updated: "2026-05-26"
 tags:
   - "llm-runtime"
   - "control-plane"
@@ -19,10 +19,19 @@ roles_focus:
   - "executor"
   - "synthesizer"
   - "governance"
-provenance: "human"
+provenance: "human" 
+amendment date: "2026-05-26" 
+reason: "LiteLLM was not implemented. Provider adapter layer supersedes the two-layer model." 
+superseded_by:
+  - "ADR-002"
+  - "ADR-012"
+  - "ADR-028"
+
 ---
 
 # ADR-001 | LLM Runtime Control Plane Selection
+
+**⚠ Amendment notice — v1.1 — 2026-05-26** This ADR has been amended. The decision recorded below (LiteLLM as control plane) was not implemented. The original decision is preserved as a historical record. See the **Amendment** section at the end of this document for the full account of what was built instead and why.
 
 ## Context
 
@@ -133,3 +142,36 @@ The IO‑III application targets **LiteLLM’s OpenAI‑compatible endpoint** as
   - ADR-003: Telemetry/logging policy and retention
   - ADR-004: Security posture for cloud provider keys
 
+---
+## Amendment — v1.1 — 2026-05-26
+
+### What happened
+
+LiteLLM was not implemented. The two-layer runtime (Ollama + LiteLLM) described in the decision above was the intended architecture at the time ADR-001 was written. As implementation progressed through Phases 1–10, the control plane and routing functions that LiteLLM was intended to supply were absorbed directly into the engine layer of IO-III. No LiteLLM dependency was introduced. No LiteLLM configuration file was created. The codebase contains no reference to LiteLLM outside this ADR and one early architecture document (DOC-ARCH-001, updated 2026-03-03).
+
+### What was built instead
+
+The runtime is governed by a direct provider adapter layer:
+
+* **`ollama_provider.py`** — the live local model adapter; the only fully implemented provider in the Phase 10 release.
+* **`openai_provider.py`** and **`anthropic_provider.py`** — stub adapters introduced in Phase 10 (ADR-028), implementing the provider protocol at the interface level only. Both raise `NotImplementedError` at instantiation. Cloud provider implementation is deferred to Phase 11.
+* **`null_provider.py`** — test and fallback surface.
+
+Routing logic, fallback policy, and mode-to-model mapping are governed directly by ADR-002 (model routing and fallback policy) and enforced through the engine layer (ADR-012, bounded orchestration layer contract). There is no intermediate routing middleware.
+
+### Why this was not recorded sooner
+
+The divergence from the ADR-001 decision accumulated silently across Phases 1–10 as the architecture evolved toward a leaner, more direct provider abstraction. No phase checkpoint triggered a formal review of ADR-001's status. This amendment constitutes that review and closes the gap between the written record and the implemented architecture.
+
+### Governing ADRs for the implemented design
+
+|  Concern |  ADR |
+|---|---|
+|  Mode-driven routing and fallback policy |  ADR-002 |
+|  Bounded orchestration layer contract |  ADR-012 |
+|  Provider adapter completion and cloud opt-in |  ADR-028 |
+|  Cloud provider enablement and key security |  ADR-004 |
+
+### Status of the original decision
+
+The original decision (LiteLLM as control plane) is preserved as a historical record. It reflects the architectural reasoning at Phase 1 and the options considered at that time. The reasoning remains sound; the implementation took a different path. This ADR's status is amended, not superseded: the context and decision drivers remain valid reference material for any future contributor evaluating control plane options.
