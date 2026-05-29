@@ -1,27 +1,33 @@
 ---
-id: "ADR-009"
-title: "Audit Gate Contract"
-type: "adr"
-status: "active"
-version: "v1.0"
+id: ADR-009
+title: Audit Gate Contract
+type: adr
+status: active
+version: v1.0
 canonical: true
-scope: "io-iii"
-audience: "internal"
+scope: io-iii
+audience: internal
 created: "2026-02-27"
-updated: "2026-03-03"
+updated: "2026-05-29"
 tags:
-  - "governance"
-  - "adr"
+  - governance
+  - adr
+  - audit
+  - challenger
 roles_focus:
-  - "governance"
-provenance: "human"
+  - governance
+provenance: human
 ---
 
 # ADR-009 | Audit Gate Contract v1.0
 
+## Status
+
+Active
+
 ---
 
-## Context
+## 1. Context
 
 IO-III v0.2 implements a one-pass audit gate using a Challenger model to review Executor output.
 
@@ -35,13 +41,26 @@ As the system expands, the audit gate becomes the primary structural hinge where
 
 This ADR freezes the audit contract to prevent architectural instability.
 
+### Rationale
+
+The audit gate is the only structural re-entry point in the execution pipeline.
+
+Freezing its behaviour:
+
+- Prevents recursion loops
+- Prevents runaway revision chains
+- Preserves deterministic routing
+- Stabilises the control plane before expansion
+
+This establishes IO-III as governance-first and expansion-ready.
+
 ---
 
-## Decision
+## 2. Decision
 
 The Audit Gate Contract is formally defined and frozen as follows:
 
-### 1. Pass Limits (Hard Constraints)
+### §1 Pass limits (hard constraints)
 
 - `max_audit_passes = 1`
 - `max_revision_passes = 1`
@@ -49,17 +68,15 @@ The Audit Gate Contract is formally defined and frozen as follows:
 
 These limits must be enforced at framework level, not by convention.
 
----
-
-### 2. Audit Input Contract
+### §2 Audit input contract
 
 Audit receives:
 ```
-{\
-prompt,\
-executor\_output,\
-constraints,\
-policies\
+{
+  prompt,
+  executor_output,
+  constraints,
+  policies
 }
 ```
 
@@ -69,15 +86,13 @@ Audit does NOT receive:
 - Memory layer access
 - Tool invocation permissions
 
----
-
-### 3. Audit Output Contract
+### §3 Audit output contract
 
 Audit must return:
 ```
-{\
-final\_output,\
-audit\_meta\
+{
+  final_output,
+  audit_meta
 }
 ```
 
@@ -88,9 +103,7 @@ Where:
 
 No additional output streams are allowed.
 
----
-
-### 4. Explicit Prohibitions
+### §4 Explicit prohibitions
 
 Audit is NOT permitted to:
 
@@ -102,34 +115,17 @@ Audit is NOT permitted to:
 - Trigger additional audits
 - Initiate recursive execution
 
-Audit is strictly evaluative + bounded revision.
+Audit is strictly evaluative and bounded revision.
 
----
+### §5 Determinism requirement
 
-### 5. Determinism Requirement
-
-Audit behavior must remain deterministic under identical inputs and policies.
+Audit behaviour must remain deterministic under identical inputs and policies.
 
 No stochastic routing or multi-agent arbitration is allowed at this layer.
 
 ---
 
-## Rationale
-
-The audit gate is the only structural re-entry point in the execution pipeline.
-
-Freezing its behavior:
-
-- Prevents recursion loops
-- Prevents runaway revision chains
-- Preserves deterministic routing
-- Stabilizes the control plane before expansion
-
-This establishes IO-III as governance-first and expansion-ready.
-
----
-
-## Consequences
+## 3. Consequences
 
 ### Positive
 
@@ -145,11 +141,11 @@ This establishes IO-III as governance-first and expansion-ready.
 - No multi-pass self-improvement cycles
 - No dynamic adaptive arbitration at audit layer
 
-These trade-offs are intentional for v0.x stabilization.
+These trade-offs are intentional for v0.x stabilisation.
 
 ---
 
-## Future Considerations (Not in Scope)
+## 4. Non-goals
 
 - Adjustable audit intensity levels
 - Conditional auto-audit policy
@@ -160,9 +156,8 @@ These require separate ADRs.
 
 ---
 
-## Status
+## 6. Amendment record
 
-Audit Gate Contract v1.0 is frozen.
-
-Any modification requires a new ADR.
-
+| Version | Date | Summary |
+|---------|------|---------|
+| v1.0 | 2026-02-27 | Initial |

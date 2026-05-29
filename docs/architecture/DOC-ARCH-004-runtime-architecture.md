@@ -1,5 +1,5 @@
 ---
-id: DOC-ARCH-001
+id: DOC-ARCH-004
 title: IO-III Runtime Architecture
 type: architecture
 status: active
@@ -11,7 +11,7 @@ audience:
   - contributors
   - reviewers
 created: "2026-03-04"
-updated: "2026-04-12"
+updated: "2026-05-29"
 tags:
   - io-iii
   - architecture

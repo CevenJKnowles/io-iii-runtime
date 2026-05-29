@@ -3,12 +3,12 @@ id: "DOC-ARCH-001"
 title: "IO-III LLM Architecture"
 type: "architecture"
 status: "active"
-version: ""
+version: v1.0
 canonical: true
 scope: "io-iii"
 audience: "portfolio"
-created: "2025-12-16"
-updated: "2026-03-03"
+created: "2026-01-04"
+updated: "2026-05-29"
 tags:
   - "architecture"
   - "io-iii"
@@ -302,4 +302,3 @@ Qwen3 provides cognitive pressure.
 Io emerges in the resolution between them.
 
 ---
-

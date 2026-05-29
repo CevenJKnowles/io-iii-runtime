@@ -2,8 +2,8 @@
 id: ADR-033
 title: Context Assembly Extension — File Input Lane
 type: adr
-status: accepted
-version: v1.1
+status: amended
+version: v1.2
 canonical: true
 scope: io-iii-phase-10
 audience:
@@ -11,7 +11,7 @@ audience:
   - maintainer
   - operator
 created: "2026-05-01"
-updated: "2026-05-01"
+updated: "2026-05-29"
 tags:
   - io-iii
   - adr
@@ -31,7 +31,7 @@ milestone: M10.0
 
 ## Status
 
-Accepted
+Amended
 
 ---
 
@@ -191,8 +191,8 @@ The following existing invariants are explicitly extended to cover file content:
 
 ## 3. Consequences
 
-- `context_assembly.py` gains a file content resolution path with `FILE_REF_EXPIRED`
-  failure handling.
+- `dialogue_session.py:run_turn()` gains the file content resolution path with
+  `FILE_REF_EXPIRED` failure handling. See implementation note below.
 - `ExecutionContext` gains an optional `file_ref: str | None` field.
 - `core/content_safety.py` is extended to enforce INV-006.
 - `core/file_store.py` is introduced as a new module.
@@ -203,6 +203,47 @@ The following existing invariants are explicitly extended to cover file content:
 - A new invariant (INV-006) is added to the invariant test suite.
 - A new failure code (`FILE_REF_EXPIRED`) is added to the failure model.
 - `engine.py`, `routing.py`, and `telemetry.py` are not modified.
+
+### Implementation note — actual resolution site (v1.2 amendment)
+
+This ADR as originally accepted (v1.0) and versioned (v1.1) stated that
+`context_assembly.py` would gain the file content resolution path. The actual
+implementation places the resolution in `dialogue_session.py:run_turn()` instead.
+
+The reason is the frozen core constraint. `engine.py` is frozen and cannot receive
+`file_ref` as a direct argument. Because `context_assembly.py` is called from
+within the engine execution path, passing `file_ref` through to it would require
+modifying `engine.py`'s call site — which is not permitted. The alternative was
+to resolve `file_ref` to extracted text before the engine is invoked, at the
+`run_turn()` call boundary in `dialogue_session.py`, and inject the resolved text
+directly into the `user_prompt` string passed to the engine.
+
+This approach is semantically equivalent to the formal lane model described in §1:
+the assembly order (memory packs → file content → direct prompt) is preserved, the
+token budget and truncation logic defined in §2 are applied in full, and INV-006
+is enforced via the same `content_safety.py` path. The only difference from the
+ADR's stated design is that the resolution step executes one layer above
+`context_assembly.py` rather than inside it.
+
+The in-code comment at `dialogue_session.py` line ~301 reads:
+
+```
+# engine.py is frozen and cannot receive file_ref directly; injecting here
+# is semantically equivalent to the ADR-033 formal lane model.
+```
+
+Future contributors amending this module should treat `dialogue_session.py:run_turn()`
+as the authoritative resolution site unless a subsequent ADR moves the boundary.
+
+---
+
+## 6. Amendment record
+
+| Version | Date | Summary |
+|---------|------|---------|
+| v1.0 | 2026-05-01 | Initial accepted |
+| v1.1 | 2026-05-01 | Frontmatter normalisation (H0 hardening) |
+| v1.2 | 2026-05-29 | Corrected §3 Consequences: file content resolution is in `dialogue_session.py:run_turn()`, not `context_assembly.py`; added implementation note with rationale (frozen `engine.py` constraint) |
 
 ---
 

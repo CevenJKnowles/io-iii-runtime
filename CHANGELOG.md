@@ -4,6 +4,32 @@ All structural milestones for I0³. Detailed architecture documentation lives in
 
 ---
 
+## v1.0.0: Phase 10, Public Release Preparation and Surface Extension
+
+Public open-source release. Two parallel work streams: Stream A hardened the project for public use; Stream B extended the execution surface under ADR governance. All Phase 1–9 invariants preserved. `engine.py`, `routing.py`, and `telemetry.py` unchanged throughout.
+
+**Stream A — Release Hardening**
+
+- **M10.1** Project identity: package, CLI entry point, all ADR and DOC headers, and repo identity updated to I0³ (`io_iii`). Internal artefacts removed. `.gitignore` corrected. History directory archived.
+- **M10.2** New-user resilience: `ProviderError` 404 caught at CLI boundary with plain-language routing hint; `routing_table.yaml` annotated with configuration guidance; OpenAI and Anthropic stub adapters introduced under `io_iii/providers/` (ADR-028)
+- **M10.3** Public documentation layer: `README.md` restructured; `CHANGELOG.md` introduced; `docs/user-guide/` created (`GETTING_STARTED.md`, `MODELS.md`, `WHY-IO-III.md`, `DOCKER.md`); `examples/` directory with five working examples; `CONTRIBUTING.md` updated with ADR-first rule and verification instructions
+- **ADR-023** amended: `user_profile.yaml` added to config surface
+- **ADR-006** amended: identity and user profile surfaces added
+
+**Stream B — Surface Extension**
+
+- **M10.4** Container deployment (ADR-032): `Dockerfile` (python:3.12-slim, `/app/config` volume, `OLLAMA_HOST` env var, port 8080); `docker-compose.yml` with host-gateway for host Ollama and commented sidecar option; `docs/user-guide/DOCKER.md`
+- **M10.5** Web UI file upload (ADR-029, ADR-033): `POST /upload` multipart endpoint; `file_store.py` in-memory session-scoped store; `ExecutionContext.file_ref`; file content injection in `dialogue_session.py:run_turn()` with token budget, truncation, and `FILE_REF_EXPIRED` handling; paperclip UI in `index.html`; supported types: `.txt .md .csv .json .yaml .py .pdf .docx`; 2 MB limit; INV-006 enforced
+- **M10.6** OpenAI-compatible transport endpoint (ADR-030, ADR-034): `POST /v1/chat/completions`; model-to-mode translation table in `runtime.yaml`; streaming support; content-safe; governed by ADR-026
+
+**ADRs introduced in Phase 10:** ADR-027 through ADR-034 (eight ADRs)
+
+**Test count at release:** 1046 passing (19 pre-existing Phase 9 failures acknowledged as non-regressions)
+
+Governing document: `docs/architecture/DOC-ARCH-018-phase-10-guide.md`
+
+---
+
 ## v0.9.0: Phase 9, API & Integration Surface
 
 Thin, content-safe HTTP surface wrapping the existing CLI and session layer. No new execution semantics. All Phase 1–8 invariants preserved.
