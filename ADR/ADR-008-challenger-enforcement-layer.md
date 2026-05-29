@@ -2,7 +2,7 @@
 id: ADR-008
 title: Challenger Enforcement Layer
 type: adr
-status: active
+status: accepted
 version: v1.0
 canonical: true
 scope: io-iii
@@ -26,7 +26,7 @@ Scope: IO-III Runtime Execution Path (`run` command)
 
 ## Status
 
-Active
+Accepted
 
 ---
 

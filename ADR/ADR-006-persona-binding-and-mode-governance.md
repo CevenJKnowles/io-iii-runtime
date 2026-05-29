@@ -2,7 +2,7 @@
 id: ADR-006
 title: Persona Binding and Mode Governance
 type: adr
-status: active
+status: amended
 version: v1.1
 canonical: true
 scope: io-iii
@@ -32,7 +32,7 @@ provenance: io-iii-runtime-development
 
 ## Status
 
-Active
+Amended
 
 ---
 
