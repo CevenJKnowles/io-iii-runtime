@@ -2,7 +2,7 @@
 id: ADR-001
 title: LLM Runtime Control Plane Selection
 type: adr
-status: ammended
+status: amended
 version: v1.1
 canonical: true
 scope: io-iii
