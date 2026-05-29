@@ -2,8 +2,8 @@
 id: ADR-003
 title: Telemetry, Logging, and Retention Policy
 type: adr
-status: active
-version: v1.0
+status: amended
+version: v1.1
 canonical: true
 scope: io-iii
 audience: internal
@@ -26,7 +26,7 @@ provenance: human
 
 ## Status
 
-Active
+Amended
 
 ---
 
@@ -147,3 +147,4 @@ Accepted (balanced, testable, low-risk).
 | Version | Date | Summary |
 |---------|------|---------|
 | v1.0 | 2026-01-09 | Initial |
+| v1.1 | 2026-05-29 | Cross-reference to ADR-034 added; ADR-034 §4 extends content-safety invariants to all HTTP response bodies and webhook payloads |

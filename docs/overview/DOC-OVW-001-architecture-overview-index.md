@@ -3,7 +3,7 @@ id: DOC-OVW-001
 title: IO-III Architecture Overview Index
 type: overview
 status: active
-version: v1
+version: v2
 canonical: true
 scope: io-iii
 audience:
@@ -12,7 +12,7 @@ audience:
   - reviewers
   - external-engineers
 created: "2026-03-04"
-updated: "2026-04-12"
+updated: "2026-05-29"
 tags:
   - io-iii
   - architecture
@@ -45,8 +45,6 @@ Each canonical document contains a YAML metadata header used for indexing and go
 |--------|--------|
 | DOC-OVW-001 | Architecture documentation index |
 | DOC-OVW-002 | IO-III persona prompt behaviour overview |
-| DOC-OVW-006 | Session state — Phase 3 hardening complete (2026-03-06) |
-| DOC-OVW-007 | Session state — Phase 3 complete, gap-closed, and operational (2026-04-01) ← current |
 
 ---
 
@@ -88,12 +86,17 @@ Examples:
 - DOC-ARCH-005 — Capability layer definition
 - DOC-ARCH-006 — Execution observability (content-safe trace)
 - DOC-ARCH-007 — Capability reference implementation
+- *(DOC-ARCH-008 through DOC-ARCH-011 — not issued. These IDs were reserved during
+  early Phase 3 planning and never assigned. No documents exist at these identifiers.
+  The numbering resumes at DOC-ARCH-012.)*
 - DOC-ARCH-012 — Phase 4 guide (Context Architecture Formalisation)
 - DOC-ARCH-013 — Phase 5 guide (Runtime Observability & Optimisation)
 - DOC-ARCH-014 — Phase 6 guide (Memory Architecture)
 - DOC-ARCH-015 — Phase 7 guide (Open-Source Initialisation Layer)
-- DOC-ARCH-016 — Phase 8 guide (Governed Dialogue Layer) ← current phase
-- DOC-ARCH-017 — Phase 9 guide (API & Integration Surface) ← next phase
+- DOC-ARCH-016 — Phase 8 guide (Governed Dialogue Layer)
+- DOC-ARCH-017 — Phase 9 guide (API & Integration Surface)
+- DOC-ARCH-018 — Phase 10 guide (Public Release Preparation and Surface Extension)
+- DOC-ARCH-019 — Phase 11 guide (Cloud Adapters, OpenAI Compatibility, and RAG Boundary) — stub
 
 ---
 

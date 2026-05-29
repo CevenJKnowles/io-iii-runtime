@@ -2,8 +2,8 @@
 id: DOC-ARCH-018
 title: Phase 10 Guide | Public Release Preparation and Surface Extension
 type: architecture
-status: draft
-version: v0.1
+status: complete
+version: v1.0
 canonical: true
 scope: phase-10
 audience:
@@ -11,7 +11,7 @@ audience:
   - maintainer
   - operator
 created: "2026-05-01"
-updated: "2026-05-01"
+updated: "2026-05-29"
 tags:
   - phase-10
   - architecture
@@ -570,46 +570,69 @@ reachable from the container. Documentation is complete.
 
 ### M10.5 — Web UI File Upload
 
-**Description:** Add file upload capability to the web UI per ADR-029. Phase 10
-delivers the Option A (client-side) implementation. Option B (server-side pipeline)
-is scoped to Phase 11 with ADR-029 as its governing contract.
+**Description:** Add file upload capability to the web UI per ADR-029 and ADR-033.
+Phase 10 delivers the Option B (server-side pipeline) implementation. Option A
+(client-side injection) was considered and set aside; the server-side path was
+chosen for its governed, auditable, content-safe properties.
 
-**Deliverables (Option A — client-side injection):**
+**Deliverables (Option B — server-side pipeline):**
 
-*`io_iii/api/static/index.html` changes:*
-- Add a file attachment button (paperclip icon) adjacent to the prompt input field.
-- Clicking the button opens a native file picker. Accepted types: `.txt`, `.md`,
-  `.csv`, `.json`, `.yaml`, `.py` (text files only for Phase 10 — binary files
-  silently rejected with a UI message).
-- When a file is selected, its text content is read via the FileReader API and
-  stored in local state. A small indicator shows the filename and an ×
-  dismiss button.
-- On submit: the file content is prepended to the prompt string in a clearly
-  delimited block:
-  ```
-  [Attached file: filename.txt]
-  ---
-  [file content here]
-  ---
-  [User prompt here]
-  ```
-- The assembled string is sent as the prompt to `POST /run` or the session turn
-  endpoint as normal. No new API endpoint required.
-- Content safety note: file content enters the prompt string and is therefore
-  subject to ADR-003 (no prompt content in logs). No change to existing behaviour.
+*`io_iii/api/app.py` — `POST /upload` endpoint:*
+- Accepts multipart form data (`file` + `session_id`).
+- Supported file types: `.txt`, `.md`, `.csv`, `.json`, `.yaml`, `.py`, `.pdf`,
+  `.docx`. Unsupported types return `422` with error code `UNSUPPORTED_FILE_TYPE`.
+- Size limit: 2 MB (`FILE_TOO_LARGE` on breach).
+- Text extraction: plain text decoded directly; `.pdf` via `pypdf`;
+  `.docx` via `python-docx`.
+- Extracted text stored session-scoped via `file_store.store()`, returning a
+  UUID `file_ref`.
+- Response: `{file_ref, filename, chars}`. Extracted text never returned or logged
+  (INV-006, ADR-003).
 
-*`docs/user-guide/GETTING_STARTED.md` update:*
-- Add a short section on file upload: what it does, what file types are supported,
-  the character limit (inherits from `context_limit_chars` in `runtime.yaml`).
+*`io_iii/core/file_store.py` — in-memory session-scoped file store:*
+- `store(session_id, text, filename) -> file_ref` — stores extracted text, returns UUID.
+- `resolve(session_id, file_ref) -> (filename, text)` — retrieves stored text;
+  raises `FileRefNotFound` if absent.
+- `delete(session_id)` — deletes all files for a session.
 
-*Test:*
-- The file injection logic is client-side JavaScript. Add a brief note in
-  `examples/` or the user guide explaining the character limit implication for
-  large files.
+*`io_iii/core/execution_context.py` — `ExecutionContext` extension:*
+- Optional `file_ref: str | None` field added.
 
-**Closes when:** A user can attach a `.txt` file in the web UI and see its
-content treated as part of the prompt. Non-text files are rejected with a
-clear message. The character limit from `runtime.yaml` still applies.
+*`io_iii/core/dialogue_session.py:run_turn()` — file content injection:*
+- When `file_ref` is present, resolves text via `file_store.resolve()` and injects
+  it into the prompt before engine invocation, with token budget enforcement per
+  ADR-033 §2 (`file_content_limit_chars` in `runtime.yaml`, default 50% of
+  `context_limit_chars`). Truncation logged with `file_truncated: true`.
+- On `FileRefNotFound`, raises `FileRefExpiredError` (code `FILE_REF_EXPIRED`).
+- Note: resolution occurs in `dialogue_session.py:run_turn()` rather than
+  `context_assembly.py` due to the frozen `engine.py` constraint — see ADR-033 §3
+  implementation note.
+
+*`io_iii/api/static/index.html` — web UI:*
+- Paperclip button (📎 Attach file) adjacent to the prompt input, enabled only
+  within an active session.
+- File picker opens on click; accepted types match the server-side list above.
+- Selected file is uploaded immediately to `POST /upload`; a filename indicator
+  with a dismiss button appears on success.
+- On prompt submit: `file_ref` is included in the turn request body.
+- `FILE_REF_EXPIRED` errors surfaced as a plain-language UI message:
+  "File expired — server was restarted. Please re-upload the file."
+
+*Session cleanup:*
+- `cli/_session_shell.py:cmd_session_close()` calls `file_store.delete(session_id)`.
+- `api/_handlers.py` `DELETE /session/{id}` handler calls
+  `file_store.delete(session_id)`.
+
+*Governing ADRs:* ADR-029 (file upload surface contract), ADR-033 (context assembly
+extension — file input lane).
+
+**Invariant check:** File content never appears in any log field or metadata record
+(INV-006). `engine.py`, `routing.py`, and `telemetry.py` are not modified.
+
+**Closes when:** A user can attach a supported file in the web UI, have its content
+injected into context assembly in a governed, content-safe manner, and receive a
+response that reflects the file content. Unsupported types and oversized files are
+rejected with clear error messages.
 
 ---
 
