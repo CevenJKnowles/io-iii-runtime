@@ -10,14 +10,14 @@ audience: internal
 created: "2026-03-03"
 updated: "2026-05-29"
 tags:
-  - "architecture"
-  - "context"
-  - "assembly"
-  - "determinism"
+  - architecture
+  - context
+  - assembly
+  - determinism
 roles_focus:
-  - "synthesizer"
-  - "executor"
-  - "governance"
+  - synthesizer
+  - executor
+  - governance
 provenance: human
 ---
 
@@ -27,7 +27,9 @@ provenance: human
 
 Active
 
-## Context
+---
+
+## 1. Context
 
 IO-III currently operates under a deterministic control plane:
 
@@ -41,7 +43,20 @@ Prompt construction is implicitly distributed across routing, persona contract i
 
 To preserve determinism and governance clarity, a formal structural boundary is required.
 
-## Decision
+### Rationale
+
+Formalising context assembly:
+
+- Preserves deterministic execution guarantees.
+- Creates a clean abstraction seam before future envelope sophistication.
+- Prevents premature integration of memory or tool surfaces.
+- Improves testability by isolating prompt construction logic.
+
+This aligns with IO-III's governance-first evolution model.
+
+---
+
+## 2. Decision
 
 Introduce a **Context Assembly Layer** as a thin, deterministic module responsible solely for constructing the final prompt envelope prior to provider execution.
 
@@ -66,18 +81,19 @@ The layer will NOT:
 
 It is a composition boundary, not a capability layer.
 
-## Rationale
+### Implementation sequence
 
-Formalising context assembly:
+1. Define SessionState v0 (structural only).
+2. Extract execution engine from CLI.
+3. Introduce Context Assembly Layer (definition and wiring).
+4. Freeze.
+5. Only then consider envelope sophistication.
 
-- Preserves deterministic execution guarantees.
-- Creates a clean abstraction seam before future envelope sophistication.
-- Prevents premature integration of memory or tool surfaces.
-- Improves testability by isolating prompt construction logic.
+This ADR defines the boundary only. It does not introduce behavioural changes.
 
-This aligns with IO-III’s governance-first evolution model.
+---
 
-## Consequences
+## 3. Consequences
 
 ### Positive
 
@@ -90,7 +106,7 @@ This aligns with IO-III’s governance-first evolution model.
 - No behavioural change at introduction.
 - No runtime surface expansion.
 
-### Explicit Non-Goals (Phase Boundary)
+### Scope boundary
 
 The following are deferred to later phases:
 
@@ -101,12 +117,16 @@ The following are deferred to later phases:
 - Autonomous orchestration
 - Multi-model arbitration
 
-## Implementation Sequence
+---
 
-1. Define SessionState v0 (structural only).
-2. Extract execution engine from CLI.
-3. Introduce Context Assembly Layer (definition + wiring).
-4. Freeze.
-5. Only then consider envelope sophistication.
+## 4. Non-goals
 
-This ADR defines the boundary only. It does not introduce behavioural changes.
+None declared.
+
+---
+
+## 6. Amendment record
+
+| Version | Date | Summary |
+|---------|------|---------|
+| v1.0 | 2026-03-03 | Initial |

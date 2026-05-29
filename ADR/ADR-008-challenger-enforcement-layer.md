@@ -10,10 +10,12 @@ audience: internal
 created: "2026-02-26"
 updated: "2026-05-29"
 tags:
-  - "governance"
-  - "adr"
+  - governance
+  - adr
+  - challenger
+  - audit
 roles_focus:
-  - "governance"
+  - governance
 provenance: human
 ---
 
@@ -21,6 +23,10 @@ provenance: human
 
 Related: ADR-009 — Audit Gate Contract v1.0
 Scope: IO-III Runtime Execution Path (`run` command)
+
+## Status
+
+Active
 
 ---
 
@@ -39,6 +45,15 @@ This architecture produces functional results but lacks:
 
 To increase reliability and production readiness, a Challenger Enforcement Layer is introduced.
 
+### Rationale
+
+- Improves reliability without architectural explosion.
+- Preserves deterministic bounded execution.
+- Maintains clear separation of roles:
+  - Executor = generative
+  - Challenger = compliance enforcement
+- Avoids uncontrolled self-refinement loops.
+
 ---
 
 ## 2. Decision
@@ -47,7 +62,7 @@ IO-III will implement a two-stage execution model:
 
 Executor → Challenger → (Optional Revision) → Final Output
 
-### 2.1 Challenger Role
+### §1 Challenger role
 
 The Challenger:
 
@@ -63,7 +78,7 @@ The Challenger:
 - MUST NOT rewrite the draft
 - MUST produce structured JSON audit output
 
-### 2.2 Enforcement Model
+### §2 Enforcement model
 
 If Challenger verdict == "pass":
     → Executor draft is returned unchanged.
@@ -76,28 +91,13 @@ If Challenger verdict == "needs_work":
     → Executor performs one revision pass.
     → Revised output becomes final output.
 
-### 2.3 Loop Policy
+### §3 Loop policy
 
 - Maximum: 1 revision pass.
 - No recursive critique loops.
 - Deterministic bounded execution.
 
----
-
-## 3. Output Contract
-
-The CLI returns a single final output message.
-
-Optional metadata may include:
-- audit_used: true/false
-- audit_verdict: pass|needs_work
-- revised: true/false
-
-The Challenger's raw critique is not returned to the user by default.
-
----
-
-## 4. Activation Policy
+### §4 Activation policy
 
 Initial implementation:
 - Enabled via CLI flag: `--audit`
@@ -105,9 +105,7 @@ Initial implementation:
 Future possibility:
 - Default enabled in production mode.
 
----
-
-## 5. Determinism & Governance
+### §5 Determinism and governance
 
 - No new facts may be introduced during revision.
 - Challenger must reference executor draft only.
@@ -116,7 +114,19 @@ Future possibility:
 
 ---
 
-## 6. Performance Impact
+## 3. Consequences
+
+### Positive
+- Higher output integrity
+- Reduced hallucination risk
+- Clear enforcement boundary
+
+### Trade-offs
+- Increased latency
+- Higher compute cost
+- Additional implementation complexity
+
+### Performance impact
 
 Adds:
 - +1 LLM call (audit)
@@ -126,32 +136,7 @@ Worst case: 3 total model invocations per run.
 
 ---
 
-## 7. Rationale
-
-- Improves reliability without architectural explosion.
-- Preserves deterministic bounded execution.
-- Maintains clear separation of roles:
-  - Executor = generative
-  - Challenger = compliance enforcement
-- Avoids uncontrolled self-refinement loops.
-
----
-
-## 8. Consequences
-
-Positive:
-- Higher output integrity
-- Reduced hallucination risk
-- Clear enforcement boundary
-
-Tradeoffs:
-- Increased latency
-- Higher compute cost
-- Additional implementation complexity
-
----
-
-## 9. Future Extensions (Not in Scope)
+## 4. Non-goals
 
 - Multi-stage challenger scoring
 - Cross-model adversarial audit
@@ -160,4 +145,8 @@ Tradeoffs:
 
 ---
 
-End of ADR-008
+## 6. Amendment record
+
+| Version | Date | Summary |
+|---------|------|---------|
+| v1.0 | 2026-02-26 | Initial |
