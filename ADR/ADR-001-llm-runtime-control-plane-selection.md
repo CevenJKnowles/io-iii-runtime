@@ -26,7 +26,11 @@ provenance: human
 
 **⚠ Amendment notice — v1.1 — 2026-05-26** This ADR has been amended. The decision recorded below (LiteLLM as control plane) was not implemented. The original decision is preserved as a historical record. See the **Amendment** section at the end of this document for the full account of what was built instead and why.
 
-## Context
+## Status
+
+Amended
+
+## 1. Context
 
 IO‑III requires a **single, stable control plane** to route prompts across multiple model backends while keeping:
 - **portable interfaces** (OpenAI-compatible where possible),
@@ -37,61 +41,24 @@ IO‑III requires a **single, stable control plane** to route prompts across mul
 
 The repo already separates **architecture**, **implementation**, and **governance** documents, and ADRs are treated as canonical decisions that prevent silent divergence.
 
-## Decision
+### Decision drivers
+
+- **Interface stability:** OpenAI-compatible surface minimizes integration churn.
+- **Provider abstraction:** Easy to add/remove local + cloud providers.
+- **Routing support:** Central place for "mode → model" mapping and fallbacks.
+- **Operational clarity:** One endpoint for clients; one place for logs + policies.
+- **Local-first:** Ollama supports laptop-friendly local inference.
+
+## 2. Decision
 
 Adopt a **two-layer runtime**:
 
 1. **Ollama** as the **local model runtime** (model hosting + local inference).
 2. **LiteLLM** as the **control plane / router** (single API endpoint, provider abstraction, routing, retries, logging hooks).
 
-The IO‑III application targets **LiteLLM’s OpenAI‑compatible endpoint** as the primary integration surface.
+The IO‑III application targets **LiteLLM's OpenAI‑compatible endpoint** as the primary integration surface.
 
-## Decision Drivers
-
-- **Interface stability:** OpenAI-compatible surface minimizes integration churn.
-- **Provider abstraction:** Easy to add/remove local + cloud providers.
-- **Routing support:** Central place for “mode → model” mapping and fallbacks.
-- **Operational clarity:** One endpoint for clients; one place for logs + policies.
-- **Local-first:** Ollama supports laptop-friendly local inference.
-
-## Options Considered
-
-### A) Direct-to-Ollama (no control plane)
-**Pros**
-- Minimal moving parts
-- Fast to start
-
-**Cons**
-- Harder multi-provider routing
-- App becomes tightly coupled to a single runtime API
-- No clean, central policy layer
-
-### B) LiteLLM-only (without Ollama)
-**Pros**
-- Strong abstraction + routing
-- Clean endpoint for IO‑III
-
-**Cons**
-- Still needs actual local runtime for local inference
-- You end up choosing a runtime anyway
-
-### C) vLLM / TGI / llama.cpp as runtime (instead of Ollama)
-**Pros**
-- Potentially higher throughput / advanced serving options
-
-**Cons**
-- Higher setup complexity on a laptop
-- More ops overhead than necessary for current phase
-
-### D) LangChain/LangGraph as “control plane”
-**Pros**
-- Rich agent/tooling ecosystem
-
-**Cons**
-- Not a control plane per se; still need runtime + provider abstraction
-- Risk of framework lock-in at this stage
-
-## Consequences
+## 3. Consequences
 
 ### Positive
 - IO‑III can standardize on **one client interface** (OpenAI-like).
@@ -105,9 +72,9 @@ The IO‑III application targets **LiteLLM’s OpenAI‑compatible endpoint** as
 ### Negative / Tradeoffs
 - More components to maintain (Ollama + LiteLLM).
 - Debugging spans layers (client → LiteLLM → Ollama/provider).
-- Needs a disciplined config strategy to avoid “routing drift”.
+- Needs a disciplined config strategy to avoid "routing drift".
 
-## Implementation Notes
+### Implementation notes
 
 ### Baseline contract
 - **Client code** calls LiteLLM (OpenAI-compatible).
@@ -122,11 +89,11 @@ The IO‑III application targets **LiteLLM’s OpenAI‑compatible endpoint** as
   - `GET /health` for LiteLLM
   - verify Ollama is reachable and at least one model is loaded
 
-### Logging & privacy
+### Logging and privacy
 - Default to **local logs only**.
-- If cloud models are enabled, ensure prompts marked “internal” remain local unless explicitly overridden.
+- If cloud models are enabled, ensure prompts marked "internal" remain local unless explicitly overridden.
 
-## Related
+### Related
 
 - `docs/architecture/io-iii-llm-architecture.md`
 - `IO-III/strategy/` (routing & persona binding notes)
@@ -135,14 +102,57 @@ The IO‑III application targets **LiteLLM’s OpenAI‑compatible endpoint** as
   - ADR-003: Telemetry/logging policy and retention
   - ADR-004: Security posture for cloud provider keys
 
----
-## Amendment — v1.1 — 2026-05-26
+## 4. Non-goals
 
-### What happened
+None declared.
+
+## 5. Options considered
+
+### Option A — Direct-to-Ollama (no control plane)
+**Pros**
+- Minimal moving parts
+- Fast to start
+
+**Cons**
+- Harder multi-provider routing
+- App becomes tightly coupled to a single runtime API
+- No clean, central policy layer
+
+### Option B — LiteLLM-only (without Ollama)
+**Pros**
+- Strong abstraction + routing
+- Clean endpoint for IO‑III
+
+**Cons**
+- Still needs actual local runtime for local inference
+- You end up choosing a runtime anyway
+
+### Option C — vLLM / TGI / llama.cpp as runtime
+**Pros**
+- Potentially higher throughput / advanced serving options
+
+**Cons**
+- Higher setup complexity on a laptop
+- More ops overhead than necessary for current phase
+
+### Option D — LangChain/LangGraph as control plane
+**Pros**
+- Rich agent/tooling ecosystem
+
+**Cons**
+- Not a control plane per se; still need runtime + provider abstraction
+- Risk of framework lock-in at this stage
+
+---
+
+## 6. Amendment record
+
+| Version | Date | Summary |
+|---------|------|---------|
+| v1.0 | 2026-01-09 | Initial |
+| v1.1 | 2026-05-26 | LiteLLM decision amended — provider adapter layer built instead. |
 
 LiteLLM was not implemented. The two-layer runtime (Ollama + LiteLLM) described in the decision above was the intended architecture at the time ADR-001 was written. As implementation progressed through Phases 1–10, the control plane and routing functions that LiteLLM was intended to supply were absorbed directly into the engine layer of IO-III. No LiteLLM dependency was introduced. No LiteLLM configuration file was created. The codebase contains no reference to LiteLLM outside this ADR and one early architecture document (DOC-ARCH-001, updated 2026-03-03).
-
-### What was built instead
 
 The runtime is governed by a direct provider adapter layer:
 
@@ -152,11 +162,7 @@ The runtime is governed by a direct provider adapter layer:
 
 Routing logic, fallback policy, and mode-to-model mapping are governed directly by ADR-002 (model routing and fallback policy) and enforced through the engine layer (ADR-012, bounded orchestration layer contract). There is no intermediate routing middleware.
 
-### Why this was not recorded sooner
-
 The divergence from the ADR-001 decision accumulated silently across Phases 1–10 as the architecture evolved toward a leaner, more direct provider abstraction. No phase checkpoint triggered a formal review of ADR-001's status. This amendment constitutes that review and closes the gap between the written record and the implemented architecture.
-
-### Governing ADRs for the implemented design
 
 |  Concern |  ADR |
 |---|---|
@@ -164,7 +170,5 @@ The divergence from the ADR-001 decision accumulated silently across Phases 1–
 |  Bounded orchestration layer contract |  ADR-012 |
 |  Provider adapter completion and cloud opt-in |  ADR-028 |
 |  Cloud provider enablement and key security |  ADR-004 |
-
-### Status of the original decision
 
 The original decision (LiteLLM as control plane) is preserved as a historical record. It reflects the architectural reasoning at Phase 1 and the options considered at that time. The reasoning remains sound; the implementation took a different path. This ADR's status is amended, not superseded: the context and decision drivers remain valid reference material for any future contributor evaluating control plane options.
