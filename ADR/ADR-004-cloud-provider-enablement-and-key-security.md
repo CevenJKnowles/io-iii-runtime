@@ -2,7 +2,7 @@
 id: ADR-004
 title: Cloud Provider Enablement and Key Security
 type: adr
-status: active
+status: accepted
 version: v1.0
 canonical: true
 scope: io-iii
@@ -27,7 +27,7 @@ provenance: human
 
 ## Status
 
-Active
+Accepted
 
 ---
 

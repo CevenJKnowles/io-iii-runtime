@@ -2,7 +2,7 @@
 id: ADR-002
 title: Model Routing and Fallback Policy
 type: adr
-status: active
+status: accepted
 version: v1.0
 canonical: true
 scope: io-iii
@@ -25,7 +25,7 @@ provenance: human
 
 ## Status
 
-Active
+Accepted
 
 ---
 

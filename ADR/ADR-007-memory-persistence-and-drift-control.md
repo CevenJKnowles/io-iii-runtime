@@ -2,7 +2,7 @@
 id: ADR-007
 title: Memory, Persistence, and Drift Control
 type: adr
-status: active
+status: accepted
 version: v1.0
 canonical: true
 scope: io-iii
@@ -28,7 +28,7 @@ provenance: human
 
 ## Status
 
-Active
+Accepted
 
 ---
 
