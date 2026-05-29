@@ -2,8 +2,8 @@
 id: ADR-010
 title: Context Assembly Layer Definition
 type: adr
-status: active
-version: v1.0
+status: amended
+version: v1.1
 canonical: true
 scope: io-iii
 audience: internal
@@ -25,7 +25,7 @@ provenance: human
 
 ## Status
 
-Active
+Amended
 
 ---
 
@@ -69,6 +69,17 @@ The Context Assembly Layer will:
    - Explicit user prompt
 2. Compose a single structured prompt envelope.
 3. Return a final prompt payload for execution.
+
+**Amendment — v1.1:** ADR-033 formally amends this record by introducing a fourth
+input lane: file-derived content. The assembly order becomes:
+
+1. Persona contract
+2. Memory pack content
+3. File content (ADR-033)
+4. Direct prompt text
+
+See ADR-033 for the full contract governing the file content lane, including token
+budget, INV-006, and server restart coherence.
 
 The layer will NOT:
 
@@ -130,3 +141,4 @@ None declared.
 | Version | Date | Summary |
 |---------|------|---------|
 | v1.0 | 2026-03-03 | Initial |
+| v1.1 | 2026-05-29 | Cross-reference to ADR-033 added; ADR-033 amends this record by introducing a fourth context assembly input lane (file content) |

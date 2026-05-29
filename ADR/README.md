@@ -71,6 +71,7 @@ implemented without a corresponding accepted ADR.
 
 - **ADR-010 — Context Assembly Layer Definition**
   Path: `./ADR/ADR-010-context-assembly-layer-definition.md`
+  Status: amended (v1.1 — ADR-033 introduces fourth context assembly input lane: file content)
 
 - **ADR-011 — Provider Health Check Policy**
   Path: `./ADR/ADR-011-provider-health-check-policy.md`
@@ -142,7 +143,7 @@ implemented without a corresponding accepted ADR.
 
 - **ADR-033 — Context Assembly Extension — File Input Lane**
   Path: `./ADR/ADR-033-context-assembly-extension-file-input-lane.md`
-  Status: amended (v1.1 — file injection point is dialogue_session.py:run_turn(), not context_assembly.py — frozen core constraint)
+  Status: amended (v1.2 — §3 Consequences corrected: file content resolution is in `dialogue_session.py:run_turn()`, not `context_assembly.py`; frozen core constraint documented)
 
 - **ADR-034 — API and Integration Surface — Transport Adapter Contract**
   Path: `./ADR/ADR-034-api-integration-surface.md`
