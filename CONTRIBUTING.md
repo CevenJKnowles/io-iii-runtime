@@ -12,7 +12,7 @@ I0³ is a governance-first deterministic AI runtime. It is intentionally minimal
 
 Any change affecting control-plane design, routing logic, provider selection, audit gate behaviour, memory or persistence layers, or API surface requires a new Architecture Decision Record before implementation begins.
 
-The ADR goes in `ADR/` and follows the existing numbering and format. Write it, commit it, and reference it in the PR. If you are unsure whether your change needs an ADR, it almost certainly does; the existing 26 records give you a clear picture of what falls within scope.
+The ADR goes in `ADR/` and follows the existing numbering and format. Write it, commit it, and reference it in the PR. If you are unsure whether your change needs an ADR, it almost certainly does; the existing 34 records give you a clear picture of what falls within scope.
 
 Changes that do not require an ADR: documentation updates, test fixes for pre-existing gaps, dependency bumps, and cosmetic refactors that do not alter observable behaviour.
 

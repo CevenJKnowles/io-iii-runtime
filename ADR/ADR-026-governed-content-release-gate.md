@@ -11,7 +11,7 @@ audience:
   - maintainer
   - operator
 created: "2026-04-13"
-updated: "2026-04-13"
+updated: "2026-05-29"
 tags:
   - io-iii
   - adr
@@ -26,6 +26,12 @@ provenance: io-iii-runtime-development
 ---
 
 # ADR-026 — Governed Content Release Gate
+
+## Status
+
+Accepted
+
+---
 
 ## 1. Context
 
