@@ -1,14 +1,14 @@
 ---
-id: "ADR-006"
-title: "Persona Binding and Mode Governance"
-type: "adr"
-status: "active"
-version: "v1.1"
+id: ADR-006
+title: Persona Binding and Mode Governance
+type: adr
+status: active
+version: v1.1
 canonical: true
-scope: "io-iii"
-audience: "internal"
+scope: io-iii
+audience: internal
 created: "2026-01-09"
-updated: "2026-05-01"
+updated: "2026-05-29"
 tags:
   - "persona"
   - "modes"
@@ -25,7 +25,7 @@ roles_focus:
   - "challenger"
   - "explorer"
   - "visionary"
-provenance: "human"
+provenance: io-iii-runtime-development
 ---
 
 # ADR-006 | Persona Binding and Mode Governance

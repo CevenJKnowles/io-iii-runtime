@@ -1,14 +1,14 @@
 ---
-id: "ADR-003"
-title: "Telemetry, Logging, and Retention Policy"
-type: "adr"
-status: "active"
-version: "v1.0"
+id: ADR-003
+title: Telemetry, Logging, and Retention Policy
+type: adr
+status: active
+version: v1.0
 canonical: true
-scope: "io-iii"
-audience: "internal"
+scope: io-iii
+audience: internal
 created: "2026-01-09"
-updated: "2026-04-01"
+updated: "2026-05-29"
 tags:
   - "telemetry"
   - "logging"
@@ -19,7 +19,7 @@ roles_focus:
   - "governance"
   - "executor"
   - "challenger"
-provenance: "human"
+provenance: human
 ---
 
 # ADR-003 | Telemetry, Logging, and Retention Policy

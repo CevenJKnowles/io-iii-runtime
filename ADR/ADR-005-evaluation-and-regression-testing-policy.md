@@ -1,14 +1,14 @@
 ---
-id: "ADR-005"
-title: "Evaluation and Regression Testing Policy"
-type: "adr"
-status: "active"
-version: "v1.0"
+id: ADR-005
+title: Evaluation and Regression Testing Policy
+type: adr
+status: active
+version: v1.0
 canonical: true
-scope: "io-iii"
-audience: "internal"
+scope: io-iii
+audience: internal
 created: "2026-01-09"
-updated: "2026-01-09"
+updated: "2026-05-29"
 tags:
   - "evaluation"
   - "regression-tests"
@@ -20,7 +20,7 @@ roles_focus:
   - "challenger"
   - "executor"
   - "governance"
-provenance: "human"
+provenance: human
 ---
 
 # ADR-005 | Evaluation and Regression Testing Policy

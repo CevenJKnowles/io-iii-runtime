@@ -1,20 +1,20 @@
 ---
-id: "ADR-009"
-title: "Audit Gate Contract"
-type: "adr"
-status: "active"
-version: "v1.0"
+id: ADR-009
+title: Audit Gate Contract
+type: adr
+status: active
+version: v1.0
 canonical: true
-scope: "io-iii"
-audience: "internal"
+scope: io-iii
+audience: internal
 created: "2026-02-27"
-updated: "2026-03-03"
+updated: "2026-05-29"
 tags:
   - "governance"
   - "adr"
 roles_focus:
   - "governance"
-provenance: "human"
+provenance: human
 ---
 
 # ADR-009 | Audit Gate Contract v1.0
@@ -165,4 +165,3 @@ These require separate ADRs.
 Audit Gate Contract v1.0 is frozen.
 
 Any modification requires a new ADR.
-

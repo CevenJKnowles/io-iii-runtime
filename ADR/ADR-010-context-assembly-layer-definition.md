@@ -1,14 +1,14 @@
 ---
-id: "ADR-010"
-title: "Context Assembly Layer Definition"
-type: "adr"
-status: "active"
-version: "v1.0"
+id: ADR-010
+title: Context Assembly Layer Definition
+type: adr
+status: active
+version: v1.0
 canonical: true
-scope: "io-iii"
-audience: "internal"
+scope: io-iii
+audience: internal
 created: "2026-03-03"
-updated: "2026-03-03"
+updated: "2026-05-29"
 tags:
   - "architecture"
   - "context"
@@ -18,7 +18,7 @@ roles_focus:
   - "synthesizer"
   - "executor"
   - "governance"
-provenance: "human"
+provenance: human
 ---
 
 # ADR-010 — Context Assembly Layer Definition

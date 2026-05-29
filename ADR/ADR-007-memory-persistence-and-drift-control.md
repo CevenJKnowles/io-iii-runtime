@@ -1,14 +1,14 @@
 ---
-id: "ADR-007"
-title: "Memory, Persistence, and Drift Control"
-type: "adr"
-status: "active"
-version: "v1.0"
+id: ADR-007
+title: Memory, Persistence, and Drift Control
+type: adr
+status: active
+version: v1.0
 canonical: true
-scope: "io-iii"
-audience: "internal"
+scope: io-iii
+audience: internal
 created: "2026-01-09"
-updated: "2026-01-09"
+updated: "2026-05-29"
 tags:
   - "memory"
   - "persistence"
@@ -21,7 +21,7 @@ roles_focus:
   - "challenger"
   - "executor"
   - "synthesizer"
-provenance: "human"
+provenance: human
 ---
 
 # ADR-007 | Memory, Persistence, and Drift Control

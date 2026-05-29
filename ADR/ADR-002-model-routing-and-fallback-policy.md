@@ -1,14 +1,14 @@
 ---
-id: "ADR-002"
-title: "Model Routing and Fallback Policy"
-type: "adr"
-status: "active"
-version: "v1.0"
+id: ADR-002
+title: Model Routing and Fallback Policy
+type: adr
+status: active
+version: v1.0
 canonical: true
-scope: "io-iii"
-audience: "internal"
+scope: io-iii
+audience: internal
 created: "2026-01-09"
-updated: "2026-01-09"
+updated: "2026-05-29"
 tags:
   - "routing"
   - "fallback"
@@ -18,7 +18,7 @@ roles_focus:
   - "executor"
   - "challenger"
   - "governance"
-provenance: "human"
+provenance: human
 ---
 
 # ADR-002 | Model Routing and Fallback Policy
@@ -128,4 +128,3 @@ Matches the declared architecture: explicit mode mapping + controlled fallback. 
 - `./ADR/ADR-001-llm-runtime-control-plane-selection.md`
 - `./docs/architecture/io-iii-llm-architecture.md`
 - `./docs/governance/adr-policy.md`
-

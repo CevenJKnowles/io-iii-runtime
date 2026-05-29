@@ -3,12 +3,12 @@ id: "DOC-GOV-002"
 title: "Capability Governance Policy"
 type: "governance"
 status: "active"
-version: ""
+version: v1.0
 canonical: true
 scope: "io-iii"
 audience: "internal"
 created: "2026-03-04"
-updated: "2026-03-04"
+updated: "2026-05-29"
 tags:
   - "governance"
   - "capabilities"

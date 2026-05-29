@@ -1,14 +1,14 @@
 ---
-id: "ADR-001"
-title: "LLM Runtime Control Plane Selection"
-type: "adr"
-status: "ammended"
-version: "v1.1"
+id: ADR-001
+title: LLM Runtime Control Plane Selection
+type: adr
+status: ammended
+version: v1.1
 canonical: true
-scope: "io-iii"
-audience: "internal"
+scope: io-iii
+audience: internal
 created: "2026-01-09"
-updated: "2026-05-26"
+updated: "2026-05-29"
 tags:
   - "llm-runtime"
   - "control-plane"
@@ -19,14 +19,7 @@ roles_focus:
   - "executor"
   - "synthesizer"
   - "governance"
-provenance: "human" 
-amendment date: "2026-05-26" 
-reason: "LiteLLM was not implemented. Provider adapter layer supersedes the two-layer model." 
-superseded_by:
-  - "ADR-002"
-  - "ADR-012"
-  - "ADR-028"
-
+provenance: human
 ---
 
 # ADR-001 | LLM Runtime Control Plane Selection

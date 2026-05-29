@@ -1,14 +1,14 @@
 ---
-id: "ADR-011"
-title: "Provider Health Check Policy"
-type: "adr"
-status: "active"
-version: "v1.0"
+id: ADR-011
+title: Provider Health Check Policy
+type: adr
+status: active
+version: v1.0
 canonical: true
-scope: "io-iii"
-audience: "internal"
+scope: io-iii
+audience: internal
 created: "2026-04-01"
-updated: "2026-04-01"
+updated: "2026-05-29"
 tags:
   - "providers"
   - "health-check"
@@ -18,7 +18,7 @@ tags:
 roles_focus:
   - "executor"
   - "governance"
-provenance: "human"
+provenance: human
 ---
 
 # ADR-011 — Provider Health Check Policy

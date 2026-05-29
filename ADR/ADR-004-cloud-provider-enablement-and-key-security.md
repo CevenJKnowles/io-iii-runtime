@@ -1,14 +1,14 @@
 ---
-id: "ADR-004"
-title: "Cloud Provider Enablement and Key Security"
-type: "adr"
-status: "active"
-version: "v1.0"
+id: ADR-004
+title: Cloud Provider Enablement and Key Security
+type: adr
+status: active
+version: v1.0
 canonical: true
-scope: "io-iii"
-audience: "internal"
+scope: io-iii
+audience: internal
 created: "2026-01-09"
-updated: "2026-01-09"
+updated: "2026-05-29"
 tags:
   - "security"
   - "cloud-providers"
@@ -20,7 +20,7 @@ roles_focus:
   - "governance"
   - "executor"
   - "challenger"
-provenance: "human"
+provenance: human
 ---
 
 # ADR-004 | Cloud Provider Enablement and Key Security
