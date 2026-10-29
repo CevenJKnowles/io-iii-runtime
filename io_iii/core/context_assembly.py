@@ -21,8 +21,8 @@ _DEFAULT_MEMORY_BUDGET_CHARS: int = 4_000
 # Non-configurable. Preserves authorship across all deployments.
 _RUNTIME_ATTRIBUTION: str = (
     "=== Runtime ===\n"
-    "I0\u00b3 io-architecture \u00b7 https://github.com/CevenJKnowles/io-architecture"
-    " \u00b7 \u00a9 Ceven Knowles\n"
+    "I0\u00b3 io-iii-runtime \u00b7 https://github.com/CevenJKnowles/io-iii-runtime"
+    " \u00b7 \u00a9 Ceven Jupiter Knowles\n"
 )
 
 
