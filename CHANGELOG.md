@@ -10,6 +10,9 @@ All structural milestones for I0³. Detailed architecture documentation lives in
 - `httpx2` added to the `dev` extra; the API tests need it for FastAPI's `TestClient`.
 - `test_cli_logs_capability_summary_fields_only` no longer calls Ollama (it now passes `no_health_check=True`).
 - README rewritten: shorter introduction, plain-sentence feature list, corrected ADR count, clone URL and status.
+- Licensing changed: code under the Apache License 2.0, documentation under CC BY-NC 4.0 (`LICENSE`, `LICENSE-DOCS`, `NOTICE`). `v1.0.0` stays under MIT for those who already have it. The name and logo are reserved.
+- The runtime attribution line, the `Dockerfile` label and `CONTRIBUTING.md` use the `io-iii-runtime` repository name and the author's full name.
+- Documentation fixes: `WHY-IO3.md` no longer says the core is frozen after Phase 1, the `WHY-IO3.md` file name is corrected in the v1.0.0 entry, and the `runtime.yaml` comment on `content_release` matches its value.
 
 ---
 
@@ -21,7 +24,7 @@ Public open-source release. Two parallel work streams: Stream A hardened the pro
 
 - **M10.1** Project identity: package, CLI entry point, all ADR and DOC headers, and repo identity updated to I0³ (`io_iii`). Internal artefacts removed. `.gitignore` corrected. History directory archived.
 - **M10.2** New-user resilience: `ProviderError` 404 caught at CLI boundary with plain-language routing hint; `routing_table.yaml` annotated with configuration guidance; OpenAI and Anthropic stub adapters introduced under `io_iii/providers/` (ADR-028)
-- **M10.3** Public documentation layer: `README.md` restructured; `CHANGELOG.md` introduced; `docs/user-guide/` created (`GETTING_STARTED.md`, `MODELS.md`, `WHY-IO-III.md`, `DOCKER.md`); `examples/` directory with five working examples; `CONTRIBUTING.md` updated with ADR-first rule and verification instructions
+- **M10.3** Public documentation layer: `README.md` restructured; `CHANGELOG.md` introduced; `docs/user-guide/` created (`GETTING_STARTED.md`, `MODELS.md`, `WHY-IO3.md`, `DOCKER.md`); `examples/` directory with five working examples; `CONTRIBUTING.md` updated with ADR-first rule and verification instructions
 - **ADR-023** amended: `user_profile.yaml` added to config surface
 - **ADR-006** amended: identity and user profile surfaces added
 

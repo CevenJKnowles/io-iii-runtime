@@ -16,7 +16,7 @@ This is fine for exploration. It is a problem when you need to know what the sys
 
 I0³ sits between your prompt and the model. Before anything reaches the model, the runtime has already resolved exactly one provider and model from a static routing table (no dynamic selection), checked that execution is within hard token and step limits, confirmed that the content safety invariants are met, and, if audit mode is on, prepared the challenger gate to review the draft before it reaches you.
 
-None of these are optional defaults you can prompt your way around. They are enforced structurally, in the execution core, which is frozen after Phase 1 and does not change.
+None of these are optional defaults you can prompt your way around. They are enforced structurally, in the execution core, which is frozen and must not be modified (DOC-GOV-001, Rule 2).
 
 The model is one component in the pipeline. It does not decide the routing, the limits, what gets logged, or whether its output is released.
 
