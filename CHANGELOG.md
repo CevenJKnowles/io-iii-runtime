@@ -4,6 +4,15 @@ All structural milestones for I0³. Detailed architecture documentation lives in
 
 ---
 
+## Unreleased
+
+- GitHub Actions CI (`.github/workflows/ci.yml`): runs the full test suite on push to `main` and on pull requests, with Python 3.11 and 3.12. Ollama is not needed.
+- `httpx2` added to the `dev` extra; the API tests need it for FastAPI's `TestClient`.
+- `test_cli_logs_capability_summary_fields_only` no longer calls Ollama (it now passes `no_health_check=True`).
+- README rewritten: shorter introduction, plain-sentence feature list, corrected ADR count, clone URL and status.
+
+---
+
 ## v1.0.0: Phase 10, Public Release Preparation and Surface Extension
 
 Public open-source release. Two parallel work streams: Stream A hardened the project for public use; Stream B extended the execution surface under ADR governance. All Phase 1–9 invariants preserved. `engine.py`, `routing.py`, and `telemetry.py` unchanged throughout.
