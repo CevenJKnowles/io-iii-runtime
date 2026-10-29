@@ -68,6 +68,7 @@ def test_cli_logs_capability_summary_fields_only(monkeypatch):
         prompt="hi",
         audit=False,
         config_dir=None,
+        no_health_check=True,
         capability_id="cap.echo_json",
         capability_payload_json='{"a": 1}',
     )
