@@ -4,6 +4,8 @@
 
 # I0³ | Deterministic AI Runtime
 
+[![CI](https://github.com/CevenJKnowles/io-iii-runtime/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CevenJKnowles/io-iii-runtime/actions/workflows/ci.yml)
+
 I0³ is a local control plane for language models. It sits between your prompt and the model, sends each request to one model chosen from a fixed routing table, and keeps every run within set limits, so you know what it will do before it runs. Prompts and model output are kept out of the logs, and a session can be paused for human approval at points you configure. It runs on Ollama and comes with a command line, an HTTP API and a web UI. The reasoning behind it is in [Why I0³ exists](docs/user-guide/WHY-IO3.md).
 
 ## What I0³ enforces
