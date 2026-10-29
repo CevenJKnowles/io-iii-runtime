@@ -126,4 +126,4 @@ The architecture docs are under `docs/`. Start with `docs/overview/DOC-OVW-001-a
 
 ## Project status
 
-The latest stable tag is `v1.0.0`, the Phase 10 public release. There are 34 Architecture Decision Records. The licence is MIT. The history is in [CHANGELOG.md](CHANGELOG.md).
+The latest stable tag is `v1.0.0`, the Phase 10 public release. There are 34 Architecture Decision Records. The code is under the Apache License 2.0 and the documentation under CC BY-NC 4.0. See [NOTICE](NOTICE). The history is in [CHANGELOG.md](CHANGELOG.md).
