@@ -35,7 +35,31 @@ The web UI and API return model output only when `content_release: true` is set 
 ### Single run
 
 ```bash
-python -m io_iii run executor --prompt "Explain deterministic routing in one sentence."
+python -m io_iii run executor --prompt "Summarise what a routing table does in one sentence."
+```
+
+It prints the active logging policy, then a JSON record of the run. This is the record, shortened: the execution trace and engine events are left out and the message is cut short. Two complete outputs are in [DOC-RUN-007](docs/runtime/DOC-RUN-007-example-run-output.md).
+
+```json
+{
+  "result": {
+    "message": "A routing table is a data structure that outlines the pathways …",
+    "meta": {
+      "telemetry": {
+        "call_count": 1,
+        "input_tokens": 612,
+        "output_tokens": 40,
+        "latency_ms": 1746,
+        "model_used": "mistral:latest"
+      }
+    },
+    "mode": "executor",
+    "provider": "ollama",
+    "model": "mistral:latest",
+    "route_id": "executor"
+  },
+  "audit_meta": null
+}
 ```
 
 ### Multi-turn session
