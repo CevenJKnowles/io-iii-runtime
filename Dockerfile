@@ -19,7 +19,7 @@ FROM python:3.12-slim
 
 LABEL org.opencontainers.image.title="Io³"
 LABEL org.opencontainers.image.description="Deterministic AI Runtime"
-LABEL org.opencontainers.image.source="https://github.com/CevenJKnowles/io-architecture"
+LABEL org.opencontainers.image.source="https://github.com/CevenJKnowles/io-iii-runtime"
 
 WORKDIR /app
 

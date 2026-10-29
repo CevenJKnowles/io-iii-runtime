@@ -29,8 +29,8 @@ I0³ will not accept contributions that introduce autonomous behaviour, dynamic 
 **Requirements:** Python 3.11+, pip.
 
 ```bash
-git clone https://github.com/CevenJKnowles/io-architecture.git
-cd io-architecture
+git clone https://github.com/CevenJKnowles/io-iii-runtime.git
+cd io-iii-runtime
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
