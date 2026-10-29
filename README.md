@@ -12,10 +12,11 @@ I0³ is a local control plane for language models. It sits between your prompt a
 
 - Each request goes to exactly one provider, chosen from a static routing table. There is no dynamic model selection.
 - A run is limited to one audit pass and one revision pass, with set limits on capability calls and session turns.
+- With `--audit`, a second model called the challenger reviews the draft before you see it. It can send the draft back for one revision.
 - Prompts, model completions and memory values are kept out of logs and metadata. API responses include model output only when `content_release` is enabled.
 - Every structural change needs an accepted Architecture Decision Record before implementation starts.
 - `routing.py`, `engine.py` and `telemetry.py` must not be modified (DOC-GOV-001, Rule 2). New behaviour goes in layers above them.
-- Sessions run in work mode, which is autonomous, or in steward mode, which asks for human approval at configurable gates.
+- Sessions run in work mode, which is autonomous, or in steward mode, which pauses at configurable limits (step count, token budget or capability class) until a human approves.
 
 ## Quick start
 
@@ -60,13 +61,13 @@ flowchart TB
         CLI["CLI\npython -m io_iii"]
         HTTP["HTTP API\nPOST /run  ·  GET /stream"]
     end
-    subgraph APILayer["API Layer  (Phase 9)"]
+    subgraph APILayer["API Layer"]
         SERVER["server.py"]
         HANDLERS["_handlers.py"]
         SSE["_sse.py — SSE streaming"]
         WEBHOOKS["_webhooks.py — webhooks"]
     end
-    subgraph Dialogue["Dialogue Layer  (Phase 8)"]
+    subgraph Dialogue["Dialogue Layer"]
         DSESSION["DialogueSession"]
         GATE["StewardGate"]
     end
@@ -76,7 +77,7 @@ flowchart TB
         ASSEMBLY["context_assembly.py"]
         ORCH["orchestrator.py"]
     end
-    subgraph Memory["Memory Layer  (Phase 6)"]
+    subgraph Memory["Memory Layer"]
         MEM["MemoryStore  +  MemoryPacks"]
     end
     subgraph Runtime["Provider Adapters"]
@@ -106,7 +107,7 @@ flowchart TB
 
 ## Non-goals
 
-I0³ is explicitly not an agent framework, autonomous reasoning pipeline, dynamic tool orchestrator, retrieval or embedding system, multi-model arbitration system, or cloud deployment platform. These exclusions are structural: each is governed by an ADR.
+I0³ is not an agent framework, an autonomous reasoning pipeline, a dynamic tool orchestrator, a retrieval or embedding system, a multi-model arbitration system or a cloud deployment platform. Each of these is a non-goal governed by an ADR.
 
 ## Documentation
 
@@ -126,4 +127,4 @@ The architecture docs are under `docs/`. Start with `docs/overview/DOC-OVW-001-a
 
 ## Project status
 
-The latest stable tag is `v1.0.0`, the Phase 10 public release. There are 34 Architecture Decision Records. The code is under the Apache License 2.0 and the documentation under CC BY-NC 4.0. See [NOTICE](NOTICE). The history is in [CHANGELOG.md](CHANGELOG.md).
+The latest stable tag is `v1.0.0`, the Phase 10 public release. There are 34 Architecture Decision Records and 1,182 tests, which run in CI on Python 3.11 and 3.12. The code is under the Apache License 2.0 and the documentation under CC BY-NC 4.0. See [NOTICE](NOTICE). The history is in [CHANGELOG.md](CHANGELOG.md).
