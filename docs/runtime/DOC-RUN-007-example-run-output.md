@@ -2,9 +2,9 @@
 id: DOC-RUN-007
 title: Example Run Output
 type: runtime
-status: draft
+status: active
 version: v1.0
-canonical: pending
+canonical: true
 scope: io-iii
 audience:
   - developer
